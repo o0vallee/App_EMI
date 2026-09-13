@@ -1,0 +1,5 @@
+# OS/editor clutter that shouldn't be tracked
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
