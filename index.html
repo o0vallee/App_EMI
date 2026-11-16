@@ -551,6 +551,54 @@
   .pk-arrow.show{ opacity:1; animation:pkArrow .7s ease-in-out infinite; }
   @keyframes pkArrow{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(9px) } }
   .pk-noevents{ pointer-events:none; }
+
+  /* ---------- Bathroom screen: when Emi says "pipí-popó", drag him to the toilet in time ---------- */
+  #banoScreen{ justify-content:flex-start; padding:185px 8px 0; }
+  #banoStars{
+    display:flex; flex-wrap:nowrap; justify-content:center; gap:1px; min-width:0;
+    background:#fff; padding:7px 12px; border-radius:999px;
+    box-shadow:0 5px 0 var(--edge), 0 8px 14px rgba(58,38,117,.12);
+  }
+  #banoStage{
+    position:relative; width:min(96vw,560px);
+    height:calc(100vh - 199px); height:calc(100dvh - 199px);
+    border-radius:34px; overflow:hidden; touch-action:none;
+    background:#f3dcb6;
+    box-shadow:0 0 0 4px rgba(255,255,255,.95), 0 10px 0 4px rgba(58,38,117,.10);
+  }
+  #banoSvg{ width:100%; height:100%; display:block; overflow:hidden; touch-action:none; }
+  #banoSvg .pk-doll{ width:84px; height:126px; overflow:visible; pointer-events:none; }
+  #banoSvg .pk-doll *{ pointer-events:none; }
+  #bnEmi{ cursor:grab; }
+  #bnEmiGrab{ fill:transparent; pointer-events:all; }
+  #bnEmi.dragging .pk-bob, #bnEmi.busy .pk-bob{ animation:none; }
+  /* "I need to go" wiggle */
+  #bnEmi.need .pk-bob{ animation:bnWiggle .45s ease-in-out infinite; }
+  #bnEmi.need.dragging .pk-bob{ animation:none; }
+  @keyframes bnWiggle{ 0%,100%{ transform:rotate(-5deg) } 50%{ transform:rotate(5deg) } }
+  #bnBubble{ opacity:0; transition:opacity .15s ease; pointer-events:none; }
+  #bnEmi.need #bnBubble{ opacity:1; }
+  #bnBubble .bn-bubble-in{ animation:bnPop .5s ease-in-out infinite; transform-origin:0 0; }
+  @keyframes bnPop{ 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.08) } }
+  #bnBubble text{ font-family:'Fredoka',ui-rounded,system-ui,sans-serif; font-weight:700; font-size:17px; fill:#3a2675; }
+  .bn-tear{ opacity:0; }
+  #bnEmi.cry .bn-tear{ animation:bnTear .7s linear infinite; }
+  #bnEmi.cry .bn-tear.t2{ animation-delay:.35s; }
+  @keyframes bnTear{ 0%{ transform:translateY(0); opacity:0 } 15%{ opacity:1 } 100%{ transform:translateY(34px); opacity:0 } }
+  #bnEmi.cry .pk-bob{ animation:bnSob .5s ease-in-out infinite; }
+  @keyframes bnSob{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(3px) } }
+  /* glow on the toilet while Emi needs to go */
+  #bnToiletGlow{ opacity:0; pointer-events:none; }
+  #bnToiletGlow.show{ animation:pkHint .9s ease-in-out infinite; }
+  #bnToiletGlow.hover{ opacity:.95; animation:none; }
+  /* urgency bar */
+  #banoTimer{
+    position:absolute; left:16px; right:16px; top:12px; height:16px; border-radius:999px;
+    background:rgba(255,255,255,.85); box-shadow:0 3px 0 rgba(58,38,117,.14); overflow:hidden;
+    opacity:0; transition:opacity .2s ease; pointer-events:none;
+  }
+  #banoTimer.show{ opacity:1; }
+  #banoTimer i{ display:block; height:100%; width:100%; border-radius:999px; background:#3ecf8e; transform-origin:left center; }
 </style>
 </head>
 <body>
@@ -1051,6 +1099,89 @@
           <path d="M-9,-30 h18 v16 h10 L0,8 L-19,-14 h10 Z" fill="#ffd23f" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
         </g></g>
       </svg>
+    </div>
+  </div>
+
+  <!-- ============ BATHROOM SCREEN: take Emi to the toilet when he says "pipí-popó" ============ -->
+  <div id="banoScreen" class="screen hidden">
+    <div id="topbar">
+      <button class="icon-btn" id="banoHomeBtn" title="Menú">🏠</button>
+      <div id="banoStars"></div>
+      <button class="icon-btn" id="banoMuteBtn" title="Sonido">🔊</button>
+    </div>
+    <div id="banoPrompt" class="prompt-banner">Emi está jugando...</div>
+    <div id="banoStage">
+      <svg id="banoSvg" viewBox="0 0 360 600" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <pattern id="bnTiles" width="30" height="30" patternUnits="userSpaceOnUse"><rect width="30" height="30" fill="#cfeefb"/><rect x="1" y="1" width="28" height="28" rx="3" fill="#e2f6ff"/></pattern>
+          <pattern id="bnFloor" width="36" height="36" patternUnits="userSpaceOnUse"><rect width="36" height="36" fill="#f4fbff"/><rect width="18" height="18" fill="#b9e3f5"/><rect x="18" y="18" width="18" height="18" fill="#b9e3f5"/></pattern>
+          <pattern id="bnWood" width="60" height="24" patternUnits="userSpaceOnUse"><rect width="60" height="24" fill="#e9c48f"/><rect y="23" width="60" height="1" fill="#d3a868"/><rect x="29" width="1" height="12" fill="#d3a868"/><rect x="59" y="12" width="1" height="12" fill="#d3a868"/></pattern>
+          <linearGradient id="bnPorc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe8f2"/></linearGradient>
+          <linearGradient id="bnRug" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb3d1"/><stop offset="1" stop-color="#ff86b4"/></linearGradient>
+        </defs>
+
+        <g class="pk-noevents">
+          <!-- playroom floor -->
+          <rect x="-200" y="250" width="760" height="560" fill="url(#bnWood)"/>
+          <ellipse cx="180" cy="470" rx="150" ry="92" fill="#f06a9f"/><ellipse cx="180" cy="466" rx="150" ry="92" fill="url(#bnRug)"/>
+          <ellipse cx="180" cy="466" rx="118" ry="70" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="2 12" stroke-linecap="round" opacity=".8"/>
+          <!-- bathroom: tiled wall + checkered floor -->
+          <rect x="-200" y="-200" width="760" height="400" fill="url(#bnTiles)"/>
+          <rect x="-200" y="200" width="760" height="70" fill="url(#bnFloor)"/>
+          <rect x="-200" y="196" width="760" height="6" fill="#8fcbe6"/>
+          <rect x="-200" y="268" width="760" height="9" fill="#c89657"/><rect x="-200" y="268" width="760" height="3" fill="#fff" opacity=".35"/>
+          <!-- mirror + sink -->
+          <rect x="52" y="52" width="66" height="76" rx="14" fill="#f5a81c"/><rect x="58" y="58" width="54" height="64" rx="10" fill="#bfe9ff"/>
+          <path d="M66,104 L88,64 M80,112 L100,76" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+          <rect x="76" y="172" width="18" height="64" rx="5" fill="url(#bnPorc)"/>
+          <path d="M46,150 L124,150 C124,170 108,180 85,180 C62,180 46,170 46,150 Z" fill="url(#bnPorc)"/>
+          <rect x="42" y="144" width="86" height="10" rx="5" fill="#fff"/>
+          <path d="M85,146 L85,132 Q85,124 95,124" stroke="#8d97a8" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="74" cy="141" r="4" fill="#2f9bff"/>
+          <!-- towel -->
+          <rect x="150" y="96" width="46" height="5" rx="2.5" fill="#8d97a8"/><path d="M156,100 h34 v44 q-17,8 -34,0 Z" fill="#ffd23f"/><rect x="156" y="130" width="34" height="5" fill="#f5a81c"/>
+          <!-- toilet: bath mat, tank, seat (back half) -->
+          <ellipse cx="275" cy="244" rx="56" ry="13" fill="#7fd3a6"/><ellipse cx="275" cy="242" rx="56" ry="13" fill="#9be3bd"/>
+          <ellipse id="bnToiletGlow" cx="275" cy="242" rx="66" ry="18" fill="#ffd23f"/>
+          <rect x="246" y="98" width="58" height="66" rx="9" fill="url(#bnPorc)"/><rect x="241" y="90" width="68" height="13" rx="6" fill="#fff"/>
+          <rect x="241" y="100" width="68" height="3" fill="#cfd9e6"/><rect x="288" y="112" width="12" height="6" rx="3" fill="#8d97a8"/>
+          <ellipse cx="275" cy="176" rx="37" ry="13" fill="#fff"/><ellipse cx="275" cy="176" rx="37" ry="13" fill="none" stroke="#cfd9e6" stroke-width="2"/>
+          <ellipse cx="275" cy="177" rx="25" ry="8" fill="#8fd3f5"/>
+          <!-- toilet paper -->
+          <rect x="330" y="150" width="22" height="5" rx="2.5" fill="#8d97a8"/><circle cx="338" cy="160" r="10" fill="#fff" stroke="#cfd9e6" stroke-width="2"/><rect x="338" y="160" width="10" height="18" fill="#fff" stroke="#cfd9e6" stroke-width="1.5"/>
+          <!-- toys -->
+          <g transform="translate(48,560)"><rect x="-22" y="-20" width="22" height="20" rx="3" fill="#2f9bff"/><rect x="2" y="-20" width="22" height="20" rx="3" fill="#ff5d9e"/><rect x="-10" y="-42" width="22" height="20" rx="3" fill="#ffd23f"/></g>
+          <g transform="translate(318,548)"><circle r="18" fill="#fff"/><path d="M-18,0 A18,18 0 0 1 18,0 Z" fill="#3ecf8e"/><path d="M0,-18 A18,18 0 0 1 0,18 A7,18 0 0 0 0,-18 Z" fill="#ffd23f"/></g>
+          <g transform="translate(300,330)"><circle cx="-13" cy="-30" r="8" fill="#b9814a"/><circle cx="13" cy="-30" r="8" fill="#b9814a"/><circle cy="-18" r="17" fill="#c9925a"/><ellipse cy="10" rx="18" ry="20" fill="#c9925a"/><ellipse cy="12" rx="10" ry="12" fill="#e9c9a0"/><ellipse cy="-13" rx="7" ry="5" fill="#e9c9a0"/><circle cx="-6" cy="-21" r="2.2" fill="#3a2675"/><circle cx="6" cy="-21" r="2.2" fill="#3a2675"/><circle cy="-15" r="2" fill="#3a2675"/></g>
+          <ellipse id="bnPuddle" cx="0" cy="0" rx="0" ry="0" fill="#ffe36e" stroke="#f1c93a" stroke-width="2" opacity=".9"/>
+        </g>
+
+        <!-- Emi -->
+        <g id="bnEmi">
+          <ellipse cx="0" cy="0" rx="26" ry="6" fill="#7a5a22" opacity=".25"/>
+          <g class="pk-bob"><svg class="pk-doll" x="-42" y="-118" width="84" height="126" viewBox="0 0 400 600"></svg>
+            <path class="bn-tear" d="M-9,-90 q-6,10 0,13 q6,-3 0,-13 Z" fill="#4db8ff"/>
+            <path class="bn-tear t2" d="M9,-90 q-6,10 0,13 q6,-3 0,-13 Z" fill="#4db8ff"/>
+          </g>
+          <g id="bnBubble" transform="translate(26,-128)"><g class="bn-bubble-in">
+            <path d="M0,0 L16,-12 L8,-26 Z" fill="#fff" stroke="#ffd23f" stroke-width="3" stroke-linejoin="round"/>
+            <rect x="2" y="-58" width="124" height="40" rx="20" fill="#fff" stroke="#ffd23f" stroke-width="3"/>
+            <path d="M9,-25 L17,-14 L20,-24 Z" fill="#fff"/>
+            <text x="64" y="-32" text-anchor="middle">¡Pipí-popó!</text>
+          </g></g>
+          <rect id="bnEmiGrab" x="-52" y="-132" width="104" height="146" rx="20"/>
+        </g>
+
+        <!-- front of the toilet bowl (drawn over Emi when he sits) + wash bubbles -->
+        <g id="bnFront" class="pk-noevents">
+          <path d="M238,177 C238,206 254,222 262,226 L260,238 L290,238 L288,226 C296,222 312,206 312,177 Z" fill="url(#bnPorc)"/>
+          <path d="M238,176 A37,13 0 0 0 312,176" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+          <path d="M238,180 A37,13 0 0 0 312,180" fill="none" stroke="#cfd9e6" stroke-width="2"/>
+          <rect x="256" y="234" width="38" height="7" rx="3.5" fill="#dfe8f2"/>
+          <g id="bnSuds" opacity="0"><circle cx="78" cy="140" r="7" fill="#fff" stroke="#8fd3f5" stroke-width="1.5"/><circle cx="92" cy="130" r="5" fill="#fff" stroke="#8fd3f5" stroke-width="1.5"/><circle cx="100" cy="144" r="6" fill="#fff" stroke="#8fd3f5" stroke-width="1.5"/><circle cx="86" cy="118" r="4" fill="#fff" stroke="#8fd3f5" stroke-width="1.5"/>
+            <path d="M95,126 v16" stroke="#4db8ff" stroke-width="4" stroke-linecap="round"/></g>
+        </g>
+      </svg>
+      <div id="banoTimer"><i></i></div>
     </div>
   </div>
 
@@ -1886,7 +2017,7 @@
      document.getElementById("vehiclesScreen"), document.getElementById("numbersScreen"),
      document.getElementById("colorsScreen"), document.getElementById("memoramaScreen"),
      document.getElementById("namephotoScreen"), document.getElementById("abecedarioScreen"),
-     document.getElementById("parkScreen")]
+     document.getElementById("parkScreen"), document.getElementById("banoScreen")]
       .forEach(s => s.classList.add("hidden"));
     menuScreen.classList.remove("hidden");
     settleMenuTrack(); // re-measure now that the carousel is actually visible/laid out
@@ -3555,7 +3686,7 @@
     parkClearMarks();
     parkPrompt.textContent = "👉 " + ride.ask;
     parkLocked = false;
-    speak("Emi, " + ride.ask.charAt(0).toLowerCase() + ride.ask.slice(1), "parque_ask_" + ride.id);
+    speak(ride.ask, "parque_ask_" + ride.id);
   }
   function showParkHint(){
     const ride = parkTarget();
@@ -3697,9 +3828,285 @@
   document.getElementById("parkRepeatBtn").addEventListener("click", () => {
     if(parkLocked) return;
     const ride = parkTarget();
-    speak("Emi, " + ride.ask.charAt(0).toLowerCase() + ride.ask.slice(1), "parque_ask_" + ride.id);
+    speak(ride.ask, "parque_ask_" + ride.id);
   });
   document.getElementById("parkMuteBtn").addEventListener("click", () => toggleMute());
+
+  /* ================= BATHROOM MINIGAME: take Emi to the toilet when he says "pipí-popó" =================
+     Emi plays in his room. After a moment he says "¡Pipí-popó!" and a timer bar starts:
+     drag him to the toilet before it runs out. In time -> applause and "¡Bravo!", then he
+     washes his hands. Too late -> a puddle and Emi cries, and the round is tried again.
+     Voice keys (synthetic speech until recorded): bano_intro, bano_pipipopo, bano_bravo,
+     bano_manos, bano_accidente, bano_espera, bano_finish. */
+  const banoScreen = document.getElementById("banoScreen");
+  const banoSvg = document.getElementById("banoSvg");
+  const banoPrompt = document.getElementById("banoPrompt");
+  const banoStars = document.getElementById("banoStars");
+  const banoTimer = document.getElementById("banoTimer");
+  const banoTimerFill = banoTimer.querySelector("i");
+  const bnEmi = document.getElementById("bnEmi");
+  const bnFront = document.getElementById("bnFront");
+  const bnBubble = document.getElementById("bnBubble");
+  const bnPuddle = document.getElementById("bnPuddle");
+  const bnSuds = document.getElementById("bnSuds");
+  const bnToiletGlow = document.getElementById("bnToiletGlow");
+  const BANO_GOAL = 4;                                   // stars needed to finish
+  const BANO_TIME = [11000, 9500, 8500, 7500];           // ms to reach the toilet, a bit less each star
+  const BANO_SPOTS = [[95,470],[200,545],[250,430],[130,560]];   // where Emi plays
+  const BANO_TOILET = [200,90,360,262];                  // drop zone (x0,y0,x1,y1)
+  let banoToken = 0;          // bumped on leave/restart so stale timers and animations stop
+  let banoStarsOn = 0;
+  let banoState = "idle";     // "play" (no need yet) | "need" (timer running) | "busy" (animation)
+  let banoDragging = false;
+  let banoPos = { x:0, y:0 };
+  let banoSpot = [0,0];
+  let banoDeadline = 0, banoTotal = 1;
+
+  bnEmi.querySelector(".pk-doll").innerHTML = characterSVG();
+
+  function banoSetEmi(x, y, rot, scale){
+    banoPos = { x:x, y:y };
+    bnEmi.setAttribute("transform", "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ") rotate(" + (rot||0).toFixed(1) + ") scale(" + (scale==null?1:scale).toFixed(3) + ")");
+    // keep the speech bubble inside the picture: flip it to Emi's left near the right edge
+    bnBubble.setAttribute("transform", x > 205 ? "translate(-26,-128) scale(-1,1)" : "translate(26,-128)");
+    const txt = bnBubble.querySelector("text");
+    txt.setAttribute("transform", x > 205 ? "translate(128,0) scale(-1,1)" : "");
+  }
+  function banoSeq(steps, done){
+    const tok = banoToken;
+    let i = 0, t0 = null;
+    function frame(now){
+      if(tok !== banoToken) return;
+      if(t0 === null) t0 = now;
+      const step = steps[i];
+      const u = Math.min(1, (now - t0) / step[0]);
+      step[1](u);
+      if(u >= 1){ i++; t0 = null; if(i >= steps.length){ if(done) done(); return; } }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  function bnHopTo(x, y, ms, scaleTo){
+    let from = null;
+    return [ms, u => {
+      if(!from) from = { x:banoPos.x, y:banoPos.y };
+      const e = u < .5 ? 2*u*u : 1 - Math.pow(-2*u + 2, 2) / 2;
+      banoSetEmi(from.x + (x - from.x) * e, from.y + (y - from.y) * e - 24 * Math.sin(Math.PI * u), 0, scaleTo == null ? 1 : scaleTo);
+    }];
+  }
+  function banoSetFace(mood){     // "sad" | "happy" | ""
+    const head = bnEmi.querySelector(".head-rig");
+    const limbs = bnEmi.querySelectorAll(".limb-l, .limb-r");
+    if(head){ head.classList.toggle("sad", mood === "sad"); head.classList.toggle("happy", mood === "happy"); }
+    limbs.forEach(l => { l.classList.toggle("sad", mood === "sad"); l.classList.toggle("clap", mood === "happy"); });
+    bnEmi.classList.toggle("cry", mood === "sad");
+  }
+  function buildBanoStars(){
+    banoStars.innerHTML = "";
+    for(let i = 0; i < BANO_GOAL; i++){
+      const s = document.createElement("span");
+      s.className = "star" + (i < banoStarsOn ? " on" : ""); s.textContent = "⭐";
+      banoStars.appendChild(s);
+    }
+  }
+  function banoOverToilet(){
+    const x = banoPos.x, y = banoPos.y - 55;
+    return x >= BANO_TOILET[0] && x <= BANO_TOILET[2] && y >= BANO_TOILET[1] && y <= BANO_TOILET[3];
+  }
+  function banoClearNeed(){
+    bnEmi.classList.remove("need");
+    banoTimer.classList.remove("show");
+    bnToiletGlow.classList.remove("show", "hover");
+  }
+
+  // ---- a round: Emi plays for a moment, then needs to go ----
+  function banoStartRound(){
+    const tok = banoToken;
+    banoState = "play";
+    banoClearNeed();
+    banoSetFace("");
+    bnEmi.classList.remove("busy");
+    bnPuddle.setAttribute("rx", 0); bnPuddle.setAttribute("ry", 0);
+    bnSuds.setAttribute("opacity", 0);
+    banoSvg.insertBefore(bnEmi, bnFront.nextSibling);
+    let spot;
+    do { spot = BANO_SPOTS[Math.floor(Math.random() * BANO_SPOTS.length)]; } while(spot === banoSpot);
+    banoSpot = spot;
+    banoSetEmi(spot[0], spot[1], 0, 1);
+    banoPrompt.textContent = "🧸 Emi está jugando...";
+    setTimeout(() => { if(tok === banoToken && banoState === "play") banoNeed(); }, 2400 + Math.random() * 2200);
+  }
+  function banoNeed(){
+    const tok = banoToken;
+    banoState = "need";
+    bnEmi.classList.add("need");
+    bnToiletGlow.classList.add("show");
+    banoPrompt.textContent = "🚽 ¡Llévalo al baño!";
+    banoTotal = BANO_TIME[Math.min(banoStarsOn, BANO_TIME.length - 1)];
+    banoDeadline = performance.now() + banoTotal;
+    banoTimer.classList.add("show");
+    let lastSay = 0;
+    function tick(now){
+      if(tok !== banoToken || banoState !== "need") return;
+      const left = Math.max(0, banoDeadline - now), f = left / banoTotal;
+      banoTimerFill.style.transform = "scaleX(" + f.toFixed(3) + ")";
+      banoTimerFill.style.background = f > .5 ? "#3ecf8e" : f > .25 ? "#ffb938" : "#f2553d";
+      if(now - lastSay > 3300){       // keeps calling out until he's taken
+        lastSay = now;
+        tone(880, 0, .1, "triangle", .12); tone(1175, .12, .12, "triangle", .12);
+        speak("¡Pipí-popó!", "bano_pipipopo");
+      }
+      if(left <= 0){ banoAccident(); return; }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function banoSuccess(){
+    const tok = banoToken;
+    banoState = "busy";
+    banoClearNeed();
+    bnEmi.classList.add("busy");
+    banoSvg.insertBefore(bnEmi, bnFront);            // sits "in" the toilet: bowl front covers his legs
+    banoPrompt.textContent = "🎉 ¡Bravo, Emi! 🎉";
+    playCorrect();
+    banoSeq([
+      bnHopTo(275, 208, 320, .85),   // feet inside the bowl front, so he reads as sitting
+      [1100, u => { if(u === 0) [0,.18,.36,.54,.72].forEach((d, i) => tone(1500 - i*90, d, .1, "sine", .06)); }],   // tinkle
+      [700, u => { if(u === 0) [520,440,370,310,260,220].forEach((f, i) => tone(f, i*.09, .16, "sawtooth", .05)); }]  // flush
+    ], () => {
+      banoStarsOn++;
+      buildBanoStars();
+      banoSetFace("happy");
+      burstConfetti(60);
+      spawnClapHands(8);
+      playApplause(true);
+      speakThen("¡Bravo, Emi! ¡Bravo! Llegaste al baño", "bano_bravo", 2000, () => {
+        if(tok !== banoToken) return;
+        banoSetFace("");
+        banoSvg.insertBefore(bnEmi, bnFront.nextSibling);
+        banoPrompt.textContent = "🧼 ¡A lavarse las manos!";
+        speak("Ahora nos lavamos las manos", "bano_manos");
+        banoSeq([
+          bnHopTo(190, 250, 360, 1), bnHopTo(124, 244, 360, 1),
+          [1500, u => {
+            if(u === 0) [0,.25,.5,.75,1].forEach(d => tone(1200 + Math.random()*500, d, .08, "sine", .05));
+            bnSuds.setAttribute("opacity", Math.sin(Math.PI * u).toFixed(2));
+            bnSuds.setAttribute("transform", "translate(0," + (-10 * u).toFixed(1) + ")");
+          }]
+        ], () => {
+          bnSuds.setAttribute("opacity", 0);
+          if(banoStarsOn >= BANO_GOAL) finishBano();
+          else setTimeout(() => { if(tok === banoToken) banoStartRound(); }, 500);
+        });
+      });
+    });
+  }
+
+  function banoAccident(){
+    const tok = banoToken;
+    banoState = "busy";
+    banoDragging = false;
+    bnEmi.classList.remove("dragging");
+    banoClearNeed();
+    bnEmi.classList.add("busy");
+    banoSetEmi(banoPos.x, Math.max(banoPos.y, 235), 0, 1);
+    bnPuddle.setAttribute("cx", banoPos.x); bnPuddle.setAttribute("cy", banoPos.y + 3);
+    banoSetFace("sad");
+    banoPrompt.textContent = "😢 ¡Ay, no! Emi se hizo";
+    playWrong();
+    [0, .55, 1.1, 1.65].forEach(d => { tone(620, d, .22, "triangle", .1); tone(470, d + .2, .3, "triangle", .1); });   // "bua, bua"
+    banoSeq([[600, u => { bnPuddle.setAttribute("rx", (34 * u).toFixed(1)); bnPuddle.setAttribute("ry", (9 * u).toFixed(1)); }]]);
+    speakThen("¡Ay, no! Emi se hizo pipí. No pasa nada, la próxima vez corremos al baño", "bano_accidente", 3000, () => {
+      if(tok === banoToken) banoStartRound();        // same star is tried again
+    });
+  }
+
+  // Taken to the toilet before he asked: nothing happens, he goes back to play.
+  function banoNotYet(){
+    const tok = banoToken;
+    banoState = "busy";
+    speak("Todavía no tiene ganas. Espera a que avise", "bano_espera");
+    banoPrompt.textContent = "⏳ Todavía no. Espera a que avise";
+    banoSeq([ bnHopTo(banoSpot[0], banoSpot[1], 520, 1) ], () => {
+      if(tok !== banoToken) return;
+      banoState = "play";
+      banoPrompt.textContent = "🧸 Emi está jugando...";
+      setTimeout(() => { if(tok === banoToken && banoState === "play") banoNeed(); }, 1800 + Math.random() * 1500);
+    });
+  }
+
+  (function initBanoDrag(){
+    let offX = 0, offY = 0;
+    function toSvg(e){
+      const m = banoSvg.getScreenCTM();
+      if(!m) return { x:0, y:0 };
+      return { x:(e.clientX - m.e) / m.a, y:(e.clientY - m.f) / m.d };
+    }
+    bnEmi.addEventListener("pointerdown", e => {
+      if(banoState !== "play" && banoState !== "need") return;
+      banoDragging = true;
+      const p = toSvg(e);
+      offX = banoPos.x - p.x; offY = banoPos.y - p.y;
+      bnEmi.classList.add("dragging");
+      try{ bnEmi.setPointerCapture(e.pointerId); }catch(err){}
+      if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      e.preventDefault();
+    });
+    bnEmi.addEventListener("pointermove", e => {
+      if(!banoDragging) return;
+      const p = toSvg(e);
+      banoSetEmi(Math.max(24, Math.min(336, p.x + offX)), Math.max(150, Math.min(594, p.y + offY)), 0, 1.06);
+      bnToiletGlow.classList.toggle("hover", banoOverToilet());
+    });
+    function end(e){
+      if(!banoDragging) return;
+      banoDragging = false;
+      bnEmi.classList.remove("dragging");
+      try{ bnEmi.releasePointerCapture(e.pointerId); }catch(err){}
+      bnToiletGlow.classList.remove("hover");
+      banoSetEmi(banoPos.x, banoPos.y, 0, 1);
+      if(banoOverToilet()){
+        if(banoState === "need") banoSuccess();
+        else if(banoState === "play") banoNotYet();
+      }
+      // anywhere else he simply stays where he was put; the timer keeps running
+    }
+    bnEmi.addEventListener("pointerup", end);
+    bnEmi.addEventListener("pointercancel", end);
+  })();
+
+  function startBanoGame(){
+    banoToken++;
+    const tok = banoToken;
+    banoStarsOn = 0;
+    banoState = "busy";
+    banoDragging = false;
+    buildBanoStars();
+    banoClearNeed();
+    banoSetFace("");
+    bnEmi.classList.remove("dragging");
+    bnPuddle.setAttribute("rx", 0); bnPuddle.setAttribute("ry", 0);
+    banoSpot = BANO_SPOTS[0];
+    banoSetEmi(banoSpot[0], banoSpot[1], 0, 1);
+    banoPrompt.textContent = "🚽 ¡Vamos a aprender a ir al baño!";
+    menuScreen.classList.add("hidden");
+    banoScreen.classList.remove("hidden");
+    speakThen("Cuando Emi diga pipí popó, llévalo rápido al baño", "bano_intro", 1400, () => {
+      if(tok === banoToken) banoStartRound();
+    });
+  }
+  function finishBano(){
+    const tok = banoToken;
+    banoState = "busy";
+    banoPrompt.textContent = "🌟 ¡Lo lograste, Emi! 🌟";
+    bigCelebration();
+    speakThen("¡Lo lograste! Emi ya sabe avisar e ir al baño", "bano_finish", 1800, () => {
+      if(tok === banoToken) showMenu();
+    });
+  }
+  document.getElementById("banoHomeBtn").addEventListener("click", () => { banoToken++; banoState = "idle"; showMenu(); });
+  document.getElementById("banoMuteBtn").addEventListener("click", () => toggleMute());
 
   function startGame(){
     order = shuffledParts();
@@ -3747,6 +4154,7 @@
   const MENU_ITEMS = [
     { emoji:"🧑", label:"Partes del cuerpo",       start: startGame, c:["#ffb03a", "#ff7a1a", "#c85400"] },
     { emoji:"🎠", label:"El parque", start: startParkGame, c:["#b4e04a","#6fbf2a","#4a8f14"] },
+    { emoji:"🚽", label:"Al baño", start: startBanoGame, c:["#5ad7e8","#19a7c4","#0f7791"] },
     { emoji:"🚗", label:"Vehículos",                start: startVehiclesGame, c:["#4db8ff", "#1f7ef0", "#1257b8"] },
     { emoji:"🔢", label:"Números",                  start: startNumbersGame, c:["#4fdc9a", "#17b877", "#0d8554"] },
     { emoji:"🔍", label:"Encuentra a tus amigos",   start: startBonusRound, c:["#ff7fb6", "#f0438a", "#b8245f"] },
@@ -3901,6 +4309,7 @@
     document.getElementById("namephotoMuteBtn").textContent = icon;
     document.getElementById("abecedarioMuteBtn").textContent = icon;
     document.getElementById("parkMuteBtn").textContent = icon;
+    document.getElementById("banoMuteBtn").textContent = icon;
     if(muted){
       if(window.speechSynthesis) window.speechSynthesis.cancel();
       if(currentAudio){ currentAudio.pause(); currentAudio = null; }
