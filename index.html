@@ -516,6 +516,41 @@
   @media (prefers-reduced-motion:reduce){
     .cloud{ animation:none; }
   }
+
+  /* ---------- Park screen: drag Emi to the playground ride you're asked for ---------- */
+  #parkScreen{ justify-content:flex-start; padding:185px 8px 0; }
+  #parkStars{
+    display:flex; flex-wrap:nowrap; justify-content:center; gap:1px; min-width:0;
+    background:#fff; padding:7px 12px; border-radius:999px;
+    box-shadow:0 5px 0 var(--edge), 0 8px 14px rgba(58,38,117,.12);
+  }
+  #parkStage{
+    position:relative; width:min(96vw,560px);
+    height:calc(100vh - 199px); height:calc(100dvh - 199px);
+    border-radius:34px; overflow:hidden; touch-action:none;
+    background:#8fdc92;
+    box-shadow:0 0 0 4px rgba(255,255,255,.95), 0 10px 0 4px rgba(58,38,117,.10);
+  }
+  #parkSvg{ width:100%; height:100%; display:block; overflow:hidden; touch-action:none; }
+  /* The nested doll <svg> must not inherit the global "svg{width:100%}" rule. */
+  #parkSvg .pk-doll{ width:84px; height:126px; overflow:visible; pointer-events:none; }
+  #parkSvg .pk-doll *{ pointer-events:none; }
+  #pkEmi{ cursor:grab; }
+  #pkEmi.dragging{ cursor:grabbing; }
+  #pkEmiGrab{ fill:transparent; pointer-events:all; }
+  .pk-bob{ animation:pkBob 1.1s ease-in-out infinite; }
+  #pkEmi.dragging .pk-bob, #pkEmi.riding .pk-bob{ animation:none; }
+  @keyframes pkBob{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-5px) } }
+  #pkEmi.wrong .pk-bob{ animation:shake .35s ease; }
+  /* Ground marker under each ride: lights up while Emi is held over it, pulses as a hint. */
+  .pk-spot{ fill:#fff; opacity:0; transition:opacity .15s ease; pointer-events:none; }
+  .pk-spot.hover{ fill:#fff7c2; opacity:.95; }
+  .pk-spot.hint{ fill:#ffd23f; animation:pkHint .9s ease-in-out infinite; }
+  @keyframes pkHint{ 0%,100%{ opacity:.25 } 50%{ opacity:.95 } }
+  .pk-arrow{ opacity:0; pointer-events:none; }
+  .pk-arrow.show{ opacity:1; animation:pkArrow .7s ease-in-out infinite; }
+  @keyframes pkArrow{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(9px) } }
+  .pk-noevents{ pointer-events:none; }
 </style>
 </head>
 <body>
@@ -862,6 +897,161 @@
     </div>
     <div id="abecedarioPrompt" class="prompt-banner">Toca la letra...</div>
     <div id="abecedarioStage"></div>
+  </div>
+
+  <!-- ============ PARK SCREEN: drag Emi to the ride you're asked for ============ -->
+  <div id="parkScreen" class="screen hidden">
+    <div id="topbar">
+      <button class="icon-btn" id="parkHomeBtn" title="Menú">🏠</button>
+      <div id="parkStars"></div>
+      <div id="controls">
+        <button class="icon-btn" id="parkRepeatBtn" title="Repetir">🔁</button>
+        <button class="icon-btn" id="parkMuteBtn" title="Sonido">🔊</button>
+      </div>
+    </div>
+    <div id="parkPrompt" class="prompt-banner">Lleva a Emi a...</div>
+    <div id="parkStage">
+      <svg id="parkSvg" viewBox="0 0 360 600" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="pkGrass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9ecae"/><stop offset="1" stop-color="#74cf82"/></linearGradient>
+          <linearGradient id="pkSand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbe3ae"/><stop offset="1" stop-color="#f2c97c"/></linearGradient>
+          <linearGradient id="pkRed" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a6b"/><stop offset="1" stop-color="#e2392b"/></linearGradient>
+          <linearGradient id="pkBlue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fd3ff"/><stop offset="1" stop-color="#1f8fe6"/></linearGradient>
+          <linearGradient id="pkYellow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe169"/><stop offset="1" stop-color="#f5a81c"/></linearGradient>
+          <linearGradient id="pkPurple" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b79bff"/><stop offset="1" stop-color="#7647e6"/></linearGradient>
+          <linearGradient id="pkGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#63e39f"/><stop offset="1" stop-color="#17a868"/></linearGradient>
+          <linearGradient id="pkWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2a763"/><stop offset="1" stop-color="#b87533"/></linearGradient>
+          <radialGradient id="pkMat" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#4a4f6a"/><stop offset="1" stop-color="#23263a"/></radialGradient>
+        </defs>
+
+        <!-- ground: grass, tree line, sand play area, flowers -->
+        <g class="pk-noevents">
+          <rect x="-200" y="-200" width="760" height="1000" fill="url(#pkGrass)"/>
+          <g>
+            <rect x="26" y="36" width="8" height="26" rx="3" fill="#a56a35"/><circle cx="30" cy="26" r="22" fill="#4fbf6b"/><circle cx="18" cy="36" r="14" fill="#5fcf7b"/><circle cx="43" cy="35" r="13" fill="#45b262"/>
+            <rect x="176" y="30" width="7" height="24" rx="3" fill="#a56a35"/><circle cx="180" cy="20" r="18" fill="#5fcf7b"/><circle cx="168" cy="29" r="11" fill="#4fbf6b"/><circle cx="192" cy="28" r="11" fill="#45b262"/>
+            <rect x="326" y="38" width="8" height="26" rx="3" fill="#a56a35"/><circle cx="330" cy="28" r="22" fill="#45b262"/><circle cx="317" cy="38" r="13" fill="#5fcf7b"/><circle cx="344" cy="37" r="13" fill="#4fbf6b"/>
+            <ellipse cx="105" cy="52" rx="24" ry="11" fill="#5fcf7b"/><ellipse cx="258" cy="50" rx="26" ry="12" fill="#4fbf6b"/>
+          </g>
+          <path d="M-20,150 C-10,80 80,58 180,62 C285,58 372,82 380,150 L380,640 L-20,640 Z" fill="#e3b869"/>
+          <path d="M-20,156 C-10,88 80,66 180,70 C285,66 372,90 380,156 L380,640 L-20,640 Z" fill="url(#pkSand)"/>
+          <g fill="#fff">
+            <g transform="translate(70,58)"><circle r="3.2" cx="-4"/><circle r="3.2" cx="4"/><circle r="3.2" cy="-4"/><circle r="3.2" cy="4"/><circle r="2.4" fill="#ffd23f"/></g>
+            <g transform="translate(140,44)"><circle r="3.2" cx="-4"/><circle r="3.2" cx="4"/><circle r="3.2" cy="-4"/><circle r="3.2" cy="4"/><circle r="2.4" fill="#ff7fb6"/></g>
+            <g transform="translate(222,56)"><circle r="3.2" cx="-4"/><circle r="3.2" cx="4"/><circle r="3.2" cy="-4"/><circle r="3.2" cy="4"/><circle r="2.4" fill="#ffd23f"/></g>
+            <g transform="translate(292,62)"><circle r="3.2" cx="-4"/><circle r="3.2" cx="4"/><circle r="3.2" cy="-4"/><circle r="3.2" cy="4"/><circle r="2.4" fill="#ff7fb6"/></g>
+          </g>
+          <!-- bottom-right decoration: bush and ball -->
+          <ellipse cx="322" cy="566" rx="34" ry="20" fill="#4fbf6b"/><ellipse cx="300" cy="574" rx="20" ry="14" fill="#5fcf7b"/><ellipse cx="344" cy="576" rx="18" ry="13" fill="#45b262"/>
+          <ellipse cx="298" cy="512" rx="16" ry="4" fill="#c99a4b" opacity=".5"/>
+          <circle cx="298" cy="496" r="15" fill="#fff"/><path d="M283,496 A15,15 0 0 1 313,496 Z" fill="#ff5d9e"/><path d="M298,481 A15,15 0 0 1 298,511 A6,15 0 0 0 298,481 Z" fill="#ffd23f"/>
+        </g>
+
+        <!-- ground markers (hover / hint) -->
+        <ellipse class="pk-spot" data-ride="columpio" cx="90" cy="222" rx="74" ry="15"/>
+        <ellipse class="pk-spot" data-ride="resbaladilla" cx="266" cy="222" rx="84" ry="15"/>
+        <ellipse class="pk-spot" data-ride="trampolin" cx="85" cy="352" rx="68" ry="15"/>
+        <ellipse class="pk-spot" data-ride="carrito" cx="275" cy="382" rx="58" ry="14"/>
+        <ellipse class="pk-spot" data-ride="arenero" cx="75" cy="500" rx="74" ry="15"/>
+
+        <!-- ===== back halves of the rides (Emi is drawn in front of these) ===== -->
+        <g class="pk-noevents">
+          <!-- swing frame -->
+          <ellipse cx="90" cy="224" rx="62" ry="7" fill="#c99a4b" opacity=".45"/>
+          <path d="M30,84 L16,222" stroke="url(#pkRed)" stroke-width="10" stroke-linecap="round" fill="none"/>
+          <path d="M150,84 L164,222" stroke="url(#pkRed)" stroke-width="10" stroke-linecap="round" fill="none"/>
+          <rect x="22" y="74" width="136" height="13" rx="6.5" fill="url(#pkRed)"/>
+          <rect x="30" y="76" width="120" height="3" rx="1.5" fill="#fff" opacity=".35"/>
+          <g id="pkSwing">
+            <line x1="76" y1="84" x2="76" y2="160" stroke="#5b6170" stroke-width="3"/>
+            <line x1="104" y1="84" x2="104" y2="160" stroke="#5b6170" stroke-width="3"/>
+            <rect x="66" y="158" width="48" height="9" rx="4.5" fill="url(#pkBlue)"/>
+          </g>
+
+          <!-- slide: tower, roof, ladder, chute -->
+          <ellipse cx="270" cy="224" rx="78" ry="7" fill="#c99a4b" opacity=".45"/>
+          <rect x="300" y="118" width="7" height="104" rx="3" fill="url(#pkPurple)"/>
+          <rect x="339" y="118" width="7" height="104" rx="3" fill="url(#pkPurple)"/>
+          <g stroke="#ffd23f" stroke-width="5" stroke-linecap="round">
+            <line x1="312" y1="140" x2="334" y2="140"/><line x1="312" y1="158" x2="334" y2="158"/><line x1="312" y1="176" x2="334" y2="176"/><line x1="312" y1="194" x2="334" y2="194"/><line x1="312" y1="212" x2="334" y2="212"/>
+          </g>
+          <line x1="311" y1="124" x2="311" y2="220" stroke="#f5a81c" stroke-width="4" stroke-linecap="round"/>
+          <line x1="335" y1="124" x2="335" y2="220" stroke="#f5a81c" stroke-width="4" stroke-linecap="round"/>
+          <rect x="300" y="70" width="5" height="52" fill="#7647e6"/><rect x="341" y="70" width="5" height="52" fill="#7647e6"/>
+          <path d="M290,74 L323,46 L356,74 Z" fill="url(#pkRed)"/><path d="M323,46 L356,74 L340,74 Z" fill="#b82a1e" opacity=".35"/>
+          <rect x="294" y="116" width="58" height="9" rx="4" fill="url(#pkYellow)"/>
+          <path d="M300,121 C262,124 250,206 188,214" stroke="#1877c9" stroke-width="27" stroke-linecap="round" fill="none"/>
+          <path d="M300,121 C262,124 250,206 188,214" stroke="url(#pkBlue)" stroke-width="21" stroke-linecap="round" fill="none"/>
+          <path d="M296,116 C262,119 250,200 190,208" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none" opacity=".45"/>
+
+          <!-- trampoline back rim and legs -->
+          <ellipse cx="85" cy="354" rx="58" ry="7" fill="#c99a4b" opacity=".45"/>
+          <g stroke="#5b6170" stroke-width="5" stroke-linecap="round"><line x1="38" y1="322" x2="34" y2="352"/><line x1="132" y1="322" x2="136" y2="352"/><line x1="62" y1="330" x2="60" y2="356"/><line x1="108" y1="330" x2="110" y2="356"/></g>
+          <ellipse cx="85" cy="318" rx="60" ry="17" fill="url(#pkBlue)"/>
+          <ellipse id="pkMatTop" cx="85" cy="318" rx="52" ry="12" fill="url(#pkMat)"/>
+
+          <!-- spring car: base, spring, car back -->
+          <ellipse cx="275" cy="384" rx="46" ry="6" fill="#c99a4b" opacity=".45"/>
+          <rect x="243" y="372" width="64" height="10" rx="4" fill="#3b3f52"/>
+          <polyline id="pkSpring" points="" fill="none" stroke="#ff9f1c" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+          <g id="pkCarBack">
+            <path d="M246,330 C246,312 258,304 275,304 C292,304 304,312 304,330 Z" fill="#0f8a54"/>
+            <path d="M252,328 C252,316 262,310 275,310 C288,310 298,316 298,328 Z" fill="#bff3da"/>
+          </g>
+
+          <!-- sandbox back board, sand, bucket, castle -->
+          <path d="M14,452 L136,452 L146,470 L4,470 Z" fill="#c98a45"/>
+          <path d="M8,468 L142,468 L146,498 L4,498 Z" fill="url(#pkSand)"/>
+          <ellipse cx="60" cy="478" rx="34" ry="7" fill="#f7dca0"/><ellipse cx="112" cy="486" rx="22" ry="5" fill="#eec57a"/>
+          <g id="pkCastle" transform="translate(112,486) scale(0)">
+            <rect x="-17" y="-22" width="34" height="22" rx="2" fill="#e8b866"/>
+            <rect x="-21" y="-36" width="12" height="36" rx="2" fill="#f0c67a"/><rect x="9" y="-36" width="12" height="36" rx="2" fill="#f0c67a"/>
+            <path d="M-21,-36 h3 v-4 h3 v4 h3 v-4 h3 v4 Z M9,-36 h3 v-4 h3 v4 h3 v-4 h3 v4 Z" fill="#f0c67a"/>
+            <path d="M-5,0 v-10 a5,5 0 0 1 10,0 v10 Z" fill="#b87533"/>
+            <line x1="0" y1="-22" x2="0" y2="-44" stroke="#8a5a2b" stroke-width="2"/><path d="M0,-44 L13,-39 L0,-34 Z" fill="#ff5d9e"/>
+          </g>
+          <g id="pkBucket" transform="translate(30,476)">
+            <path d="M-10,-16 L10,-16 L7,2 L-7,2 Z" fill="url(#pkRed)"/><rect x="-12" y="-19" width="24" height="5" rx="2.5" fill="#ff9a8e"/>
+            <path d="M-9,-18 Q0,-32 9,-18" stroke="#fff" stroke-width="2.5" fill="none"/>
+          </g>
+        </g>
+
+        <!-- Emi -->
+        <g id="pkEmi">
+          <ellipse id="pkEmiShadow" cx="0" cy="0" rx="26" ry="6" fill="#7a5a22" opacity=".28"/>
+          <g class="pk-bob"><svg class="pk-doll" x="-42" y="-118" width="84" height="126" viewBox="0 0 400 600"></svg></g>
+          <rect id="pkEmiGrab" x="-52" y="-132" width="104" height="146" rx="20"/>
+        </g>
+
+        <!-- ===== front halves of the rides (drawn over Emi while riding) ===== -->
+        <g id="pkFront" class="pk-noevents">
+          <!-- slide: near rail of the chute -->
+          <path d="M300,133 C268,136 256,214 190,224" stroke="#1877c9" stroke-width="5" stroke-linecap="round" fill="none"/>
+          <!-- trampoline front rim -->
+          <path d="M25,318 A60,17 0 0 0 145,318" stroke="#1877c9" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <g stroke="#ffd23f" stroke-width="2.5" stroke-linecap="round"><line x1="46" y1="328" x2="50" y2="324"/><line x1="66" y1="333" x2="68" y2="328"/><line x1="85" y1="335" x2="85" y2="330"/><line x1="104" y1="333" x2="102" y2="328"/><line x1="124" y1="328" x2="120" y2="324"/></g>
+          <!-- car front: body, wheels, face -->
+          <g id="pkCarFront">
+            <path d="M232,336 C232,326 240,322 250,322 L300,322 C310,322 318,326 318,336 L318,346 C318,351 314,354 309,354 L241,354 C236,354 232,351 232,346 Z" fill="url(#pkGreen)"/>
+            <rect x="238" y="326" width="74" height="4" rx="2" fill="#fff" opacity=".35"/>
+            <circle cx="250" cy="354" r="11" fill="#2b2e3d"/><circle cx="250" cy="354" r="5" fill="#ffd23f"/>
+            <circle cx="300" cy="354" r="11" fill="#2b2e3d"/><circle cx="300" cy="354" r="5" fill="#ffd23f"/>
+            <circle cx="263" cy="337" r="5" fill="#fff"/><circle cx="264" cy="338" r="2.4" fill="#23263a"/>
+            <circle cx="287" cy="337" r="5" fill="#fff"/><circle cx="288" cy="338" r="2.4" fill="#23263a"/>
+            <path d="M267,345 Q275,351 283,345" stroke="#0b6b40" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          </g>
+          <!-- sandbox front board + shovel -->
+          <path d="M2,492 L148,492 L150,510 L0,510 Z" fill="url(#pkWood)"/>
+          <rect x="6" y="495" width="138" height="3" rx="1.5" fill="#fff" opacity=".3"/>
+          <g transform="translate(132,484) rotate(24)"><rect x="-1.5" y="-22" width="3" height="20" rx="1.5" fill="#8a5a2b"/><path d="M-6,-2 h12 v8 a6,6 0 0 1 -12,0 Z" fill="#2f9bff"/></g>
+        </g>
+
+        <!-- bouncing arrow that points at the ride when Emi needs a hint -->
+        <g id="pkArrowPos" class="pk-noevents"><g class="pk-arrow" id="pkArrow">
+          <path d="M-9,-30 h18 v16 h10 L0,8 L-19,-14 h10 Z" fill="#ffd23f" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+        </g></g>
+      </svg>
+    </div>
   </div>
 
   <div id="confetti-layer"></div>
@@ -1695,7 +1885,8 @@
     [startScreen, gameScreen, document.getElementById("bonusScreen"),
      document.getElementById("vehiclesScreen"), document.getElementById("numbersScreen"),
      document.getElementById("colorsScreen"), document.getElementById("memoramaScreen"),
-     document.getElementById("namephotoScreen"), document.getElementById("abecedarioScreen")]
+     document.getElementById("namephotoScreen"), document.getElementById("abecedarioScreen"),
+     document.getElementById("parkScreen")]
       .forEach(s => s.classList.add("hidden"));
     menuScreen.classList.remove("hidden");
     settleMenuTrack(); // re-measure now that the carousel is actually visible/laid out
@@ -3170,6 +3361,346 @@
     speakThen("¡Excelente! Ya conoces todo el abecedario", "abecedario_finish", 1800, showMenu);
   }
 
+  /* ================= PARK MINIGAME: drag Emi to the ride you're asked for =================
+     One SVG scene (viewBox 360x600). Emi is a <g> moved with a transform, so dragging and
+     every ride animation work in the same coordinates whatever the screen size.
+     Voice lines use these keys (falls back to synthetic speech until they're recorded):
+       parque_intro, parque_finish,
+       parque_ask_<id> and parque_praise_<id> for each ride id below. */
+  const parkScreen = document.getElementById("parkScreen");
+  const parkSvg = document.getElementById("parkSvg");
+  const parkPrompt = document.getElementById("parkPrompt");
+  const parkStars = document.getElementById("parkStars");
+  const pkEmi = document.getElementById("pkEmi");
+  const pkFront = document.getElementById("pkFront");
+  const pkSwing = document.getElementById("pkSwing");
+  const pkSpring = document.getElementById("pkSpring");
+  const pkCarBack = document.getElementById("pkCarBack");
+  const pkCarFront = document.getElementById("pkCarFront");
+  const pkCastle = document.getElementById("pkCastle");
+  const pkBucket = document.getElementById("pkBucket");
+  const pkMatTop = document.getElementById("pkMatTop");
+  const pkArrow = document.getElementById("pkArrow");
+  const pkArrowPos = document.getElementById("pkArrowPos");
+  const pkEmiShadow = document.getElementById("pkEmiShadow");
+  const PARK_HOME = { x:215, y:572 };
+  // zone = where Emi's body has to be dropped (x0,y0,x1,y1); arrow = where the hint arrow points.
+  const PARK_RIDES = [
+    { id:"resbaladilla", ask:"Lleva a Emi a la resbaladilla", praise:"¡Wiii! Emi se echó por la resbaladilla",
+      zone:[182,60,360,232], arrow:[268,78] },
+    { id:"columpio", ask:"Lleva a Emi al columpio", praise:"¡Qué alto! Emi se mece en el columpio",
+      zone:[0,66,172,232], arrow:[90,52] },
+    { id:"trampolin", ask:"Lleva a Emi al trampolín", praise:"¡Boing, boing! Emi brinca en el trampolín",
+      zone:[0,250,160,366], arrow:[85,272] },
+    { id:"carrito", ask:"Lleva a Emi al carrito", praise:"¡Run, run! Emi maneja el carrito",
+      zone:[205,280,360,396], arrow:[275,276] },
+    { id:"arenero", ask:"Lleva a Emi al arenero", praise:"¡Mira! Emi hizo un castillo de arena",
+      zone:[0,418,162,520], arrow:[75,424] }
+  ];
+  let parkOrder = [];
+  let parkIndex = 0;
+  let parkWrong = 0;
+  let parkLocked = true;
+  let parkToken = 0;      // bumped whenever the game is left/restarted, so stale timers and animations stop
+  let parkEmiPos = { x:PARK_HOME.x, y:PARK_HOME.y };
+
+  pkEmi.querySelector(".pk-doll").innerHTML = characterSVG();
+
+  function parkSetEmi(x, y, rot, scale){
+    parkEmiPos = { x:x, y:y };
+    pkEmi.setAttribute("transform", "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ") rotate(" + (rot||0).toFixed(1) + ") scale(" + (scale==null?1:scale).toFixed(3) + ")");
+  }
+  function parkSpringPoints(topY){
+    // zig-zag between the car's underside (topY) and the base plate (y=372)
+    const n = 6, x0 = 262, x1 = 288, pts = ["275," + topY.toFixed(1)];
+    for(let i = 1; i < n; i++){
+      const y = topY + (372 - topY) * i / n;
+      pts.push((i % 2 ? x0 : x1) + "," + y.toFixed(1));
+    }
+    pts.push("275,372");
+    pkSpring.setAttribute("points", pts.join(" "));
+  }
+  function parkSetCar(dy, tilt){
+    const t = "translate(0," + dy.toFixed(1) + ") rotate(" + tilt.toFixed(1) + " 275 354)";
+    pkCarBack.setAttribute("transform", t);
+    pkCarFront.setAttribute("transform", t);
+    parkSpringPoints(356 + dy);
+  }
+  function parkResetScene(){
+    pkSwing.setAttribute("transform", "");
+    parkSetCar(0, 0);
+    pkCastle.setAttribute("transform", "translate(112,486) scale(0)");
+    pkBucket.setAttribute("transform", "translate(30,476)");
+    pkMatTop.setAttribute("cy", 318); pkMatTop.setAttribute("ry", 12);
+    pkEmiShadow.style.opacity = "";
+  }
+  function parkClearMarks(){
+    parkSvg.querySelectorAll(".pk-spot").forEach(s => s.classList.remove("hover", "hint"));
+    pkArrow.classList.remove("show");
+  }
+
+  // Runs [durationMs, fn(progress 0..1)] steps one after another, then `done`.
+  function parkSeq(steps, done){
+    const tok = parkToken;
+    let i = 0, t0 = null;
+    function frame(now){
+      if(tok !== parkToken) return;
+      if(t0 === null) t0 = now;
+      const step = steps[i];
+      const u = Math.min(1, (now - t0) / step[0]);
+      step[1](u);
+      if(u >= 1){ i++; t0 = null; if(i >= steps.length){ if(done) done(); return; } }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  const pkEaseIO = u => u < .5 ? 2*u*u : 1 - Math.pow(-2*u + 2, 2) / 2;
+  const pkEaseIn = u => u * u;
+  const pkLerp = (a, b, u) => a + (b - a) * u;
+  // Small hop from wherever Emi is to (x,y).
+  function pkHopTo(x, y, ms, scaleTo){
+    let from = null;
+    return [ms, u => {
+      if(!from) from = { x:parkEmiPos.x, y:parkEmiPos.y };
+      const e = pkEaseIO(u);
+      parkSetEmi(pkLerp(from.x, x, e), pkLerp(from.y, y, e) - 26 * Math.sin(Math.PI * u), 0, scaleTo == null ? 1 : scaleTo);
+    }];
+  }
+
+  const PARK_ANIM = {
+    resbaladilla(done){
+      const P0 = [300,121], P1 = [262,124], P2 = [250,206], P3 = [188,214];
+      const bez = (u, k) => { const v = 1 - u; return v*v*v*P0[k] + 3*v*v*u*P1[k] + 3*v*u*u*P2[k] + u*u*u*P3[k]; };
+      [0, .16, .32, .48].forEach((d, i) => tone(392 + i*60, d, .1, "triangle", .12));
+      parkSeq([
+        pkHopTo(323, 222, 300, .8),
+        [800, u => parkSetEmi(323, pkLerp(222, 121, u) - 4 * Math.abs(Math.sin(u * Math.PI * 4)), 0, .8)],  // up the ladder
+        [260, u => { if(u === 0) [880,784,698,622,523,440,392].forEach((f, i) => tone(f, .26 + i*.09, .14, "sine", .13));
+                     parkSetEmi(pkLerp(323, 300, u), 121, pkLerp(0, -24, u), .8); }],
+        [900, u => { const e = pkEaseIn(u); parkSetEmi(bez(e, 0), bez(e, 1), pkLerp(-24, -34, Math.sin(Math.PI * u)), .8); }],
+        [320, u => parkSetEmi(pkLerp(188, 172, u), 214 + 10*u - 16 * Math.sin(Math.PI * u), pkLerp(-24, 0, u), pkLerp(.8, .9, u))]
+      ], done);
+    },
+    columpio(done){
+      const PX = 90, PY = 84, L = 78, S = .8, HIP = 44 * S;   // rope pivot, rope length, doll scale, seat-to-feet
+      const place = deg => {
+        const a = deg * Math.PI / 180;
+        pkSwing.setAttribute("transform", "rotate(" + deg.toFixed(1) + " " + PX + " " + PY + ")");
+        parkSetEmi(PX - (L + HIP) * Math.sin(a), PY + (L + HIP) * Math.cos(a), deg, S);
+      };
+      [0, .85, 1.7, 2.55].forEach((d, i) => { tone(440, d, .35, "sine", .1); tone(587, d + .42, .35, "sine", .1); });
+      parkSeq([
+        pkHopTo(PX, PY + L + HIP, 320, S),
+        [3400, u => { const env = Math.sin(Math.PI * Math.min(1, u * 1.08)); place(34 * env * Math.sin(u * Math.PI * 8)); }],
+        [200, u => place(0)]
+      ], done);
+    },
+    trampolin(done){
+      const BX = 85, BY = 318, heights = [36, 60, 84, 44];
+      const jump = (h, i) => [560, u => {
+        if(u === 0) tone(260 + i*70, 0, .22, "sine", .16), tone(520 + i*140, .05, .2, "triangle", .08);
+        const y = h * 4 * u * (1 - u);
+        const dip = Math.max(0, 1 - Math.min(u, 1 - u) * 9) * 7;          // mat sinks at take-off/landing
+        pkMatTop.setAttribute("cy", 318 + dip * .6); pkMatTop.setAttribute("ry", 12 + dip * .4);
+        pkEmiShadow.style.opacity = (0.28 * (1 - y / 140)).toFixed(2);
+        parkSetEmi(BX, BY + dip * .6 - y, i === 2 ? 360 * pkEaseIO(u) : 0, .85);
+      }];
+      parkSeq([ pkHopTo(BX, BY, 320, .85) ].concat(heights.map(jump)), done);
+    },
+    carrito(done){
+      const CX = 275, FY = 368;   // feet low inside the car so only the upper body shows
+      [0, .22].forEach(d => tone(494, d, .14, "square", .07));
+      [1.1, 1.32].forEach(d => tone(494, d, .14, "square", .07));
+      parkSeq([
+        pkHopTo(CX, FY, 320, .8),
+        [2600, u => {
+          const env = Math.sin(Math.PI * Math.min(1, u * 1.05));
+          const dy = -11 * Math.abs(Math.sin(u * Math.PI * 7)) * env;
+          const tilt = 7 * Math.sin(u * Math.PI * 5) * env;
+          parkSetCar(dy, tilt);
+          const a = tilt * Math.PI / 180;      // keep Emi glued to the seat while the car rocks
+          parkSetEmi(CX + (FY - 354) * -Math.sin(a), 354 + dy + (FY - 354) * Math.cos(a), tilt, .8);
+        }],
+        [150, u => { parkSetCar(0, 0); parkSetEmi(CX, FY, 0, .8); }]
+      ], done);
+    },
+    arenero(done){
+      const EX = 62, EY = 490;
+      [0, .3, .6].forEach((d, i) => tone(300 + i*40, d + .4, .12, "triangle", .1));
+      [659, 784, 988].forEach((f, i) => tone(f, 1.5 + i*.12, .2, "triangle", .14));
+      parkSeq([
+        pkHopTo(EX, EY, 340, .85),
+        [900, u => pkBucket.setAttribute("transform", "translate(" + pkLerp(30, 96, pkEaseIO(u)).toFixed(1) + "," + (476 - 30 * Math.sin(Math.PI * u)).toFixed(1) + ") rotate(" + (150 * pkEaseIO(u)).toFixed(1) + ")")],
+        [300, u => pkBucket.setAttribute("transform", "translate(" + pkLerp(96, 30, u).toFixed(1) + "," + (476 - 14 * Math.sin(Math.PI * u)).toFixed(1) + ") rotate(" + (150 * (1 - u)).toFixed(1) + ")")],
+        [700, u => { const s = u < .7 ? pkLerp(0, 1.18, u / .7) : pkLerp(1.18, 1, (u - .7) / .3);
+                     pkCastle.setAttribute("transform", "translate(112,486) scale(" + s.toFixed(3) + ")"); }],
+        [700, u => parkSetEmi(EX, EY - 14 * Math.abs(Math.sin(u * Math.PI * 2)), 0, .85)]
+      ], done);
+    }
+  };
+
+  function buildParkStars(){
+    parkStars.innerHTML = "";
+    PARK_RIDES.forEach(() => {
+      const s = document.createElement("span");
+      s.className = "star"; s.textContent = "⭐";
+      parkStars.appendChild(s);
+    });
+  }
+  function parkTarget(){ return parkOrder[parkIndex]; }
+
+  function askPark(){
+    const ride = parkTarget();
+    parkWrong = 0;
+    parkClearMarks();
+    parkPrompt.textContent = "👉 " + ride.ask;
+    parkLocked = false;
+    speak("Emi, " + ride.ask.charAt(0).toLowerCase() + ride.ask.slice(1), "parque_ask_" + ride.id);
+  }
+  function showParkHint(){
+    const ride = parkTarget();
+    const spot = parkSvg.querySelector('.pk-spot[data-ride="' + ride.id + '"]');
+    if(spot) spot.classList.add("hint");
+    pkArrowPos.setAttribute("transform", "translate(" + ride.arrow[0] + "," + ride.arrow[1] + ")");
+    pkArrow.classList.add("show");
+  }
+  function parkRideAt(x, y){   // which ride's zone holds the point, if any
+    return PARK_RIDES.find(r => x >= r.zone[0] && x <= r.zone[2] && y >= r.zone[1] && y <= r.zone[3]) || null;
+  }
+  function parkGoHome(after){
+    pkEmi.classList.add("riding");
+    parkSeq([ pkHopTo(PARK_HOME.x, PARK_HOME.y, 520, 1) ], () => { pkEmi.classList.remove("riding"); if(after) after(); });
+  }
+
+  function parkCorrect(ride){
+    const tok = parkToken;
+    parkLocked = true;
+    parkClearMarks();
+    pkEmi.classList.add("riding");
+    parkSvg.insertBefore(pkEmi, pkFront);        // tuck Emi behind the ride's front pieces
+    playCorrect();
+    parkPrompt.textContent = "🎉 ¡Bravo, Emi! 🎉";
+    const stars = parkStars.querySelectorAll(".star");
+    let rideDone = false, voiceDone = false;
+    function next(){
+      if(tok !== parkToken || !rideDone || !voiceDone) return;
+      const headRig = pkEmi.querySelector(".head-rig");
+      const limbs = pkEmi.querySelectorAll(".limb-l, .limb-r");
+      if(headRig) headRig.classList.remove("happy");
+      limbs.forEach(l => l.classList.remove("clap"));
+      parkSvg.insertBefore(pkEmi, pkFront.nextSibling);   // back on top so it can be grabbed anywhere
+      parkIndex++;
+      parkGoHome(() => {
+        parkResetScene();
+        if(parkIndex >= parkOrder.length) finishPark(); else askPark();
+      });
+    }
+    PARK_ANIM[ride.id](() => {
+      if(tok !== parkToken) return;
+      if(stars[parkIndex]) stars[parkIndex].classList.add("on");
+      burstConfetti(45);
+      playApplause();
+      const headRig = pkEmi.querySelector(".head-rig");
+      if(headRig) headRig.classList.add("happy");
+      pkEmi.querySelectorAll(".limb-l, .limb-r").forEach(l => l.classList.add("clap"));
+      setTimeout(() => { rideDone = true; next(); }, 900);
+    });
+    speakThen(ride.praise, "parque_praise_" + ride.id, 1600, () => { voiceDone = true; next(); });
+  }
+
+  function parkWrongDrop(){
+    parkWrong++;
+    parkLocked = true;
+    playWrong();
+    pkEmi.classList.add("wrong");
+    setTimeout(() => pkEmi.classList.remove("wrong"), 350);
+    speak("Inténtalo de nuevo", "retry");
+    parkGoHome(() => {
+      parkLocked = false;
+      if(parkWrong >= 2) showParkHint();
+    });
+  }
+
+  // Drag: pointer position is converted into the SVG's own coordinates, so it stays
+  // exact however the scene is scaled or letterboxed on screen.
+  (function initParkDrag(){
+    let dragging = false, offX = 0, offY = 0;
+    function toSvg(e){
+      const m = parkSvg.getScreenCTM();
+      if(!m) return { x:0, y:0 };
+      return { x:(e.clientX - m.e) / m.a, y:(e.clientY - m.f) / m.d };
+    }
+    pkEmi.addEventListener("pointerdown", e => {
+      if(parkLocked) return;
+      dragging = true;
+      const p = toSvg(e);
+      offX = parkEmiPos.x - p.x; offY = parkEmiPos.y - p.y;
+      pkEmi.classList.add("dragging");
+      pkArrow.classList.remove("show");
+      try{ pkEmi.setPointerCapture(e.pointerId); }catch(err){}
+      if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      e.preventDefault();
+    });
+    pkEmi.addEventListener("pointermove", e => {
+      if(!dragging) return;
+      const p = toSvg(e);
+      const x = Math.max(20, Math.min(340, p.x + offX)), y = Math.max(110, Math.min(596, p.y + offY));
+      parkSetEmi(x, y, 0, 1.08);
+      const over = parkRideAt(x, y - 55);
+      parkSvg.querySelectorAll(".pk-spot").forEach(s => s.classList.toggle("hover", !!over && s.dataset.ride === over.id));
+    });
+    function end(e){
+      if(!dragging) return;
+      dragging = false;
+      pkEmi.classList.remove("dragging");
+      try{ pkEmi.releasePointerCapture(e.pointerId); }catch(err){}
+      parkSvg.querySelectorAll(".pk-spot").forEach(s => s.classList.remove("hover"));
+      const over = parkRideAt(parkEmiPos.x, parkEmiPos.y - 55);
+      if(over && over.id === parkTarget().id) parkCorrect(over);
+      else if(over) parkWrongDrop();
+      else { parkLocked = true; parkGoHome(() => { parkLocked = false; }); }   // dropped on empty ground: no penalty
+    }
+    pkEmi.addEventListener("pointerup", end);
+    pkEmi.addEventListener("pointercancel", end);
+  })();
+
+  function startParkGame(){
+    parkToken++;
+    const tok = parkToken;
+    parkOrder = shuffledIndices(PARK_RIDES.length).map(i => PARK_RIDES[i]);
+    parkIndex = 0;
+    parkLocked = true;
+    buildParkStars();
+    parkResetScene();
+    parkClearMarks();
+    pkEmi.classList.remove("riding", "dragging", "wrong");
+    parkSvg.insertBefore(pkEmi, pkFront.nextSibling);
+    parkSetEmi(PARK_HOME.x, PARK_HOME.y, 0, 1);
+    parkPrompt.textContent = "¡Vamos al parque! 🌳";
+    menuScreen.classList.add("hidden");
+    parkScreen.classList.remove("hidden");
+    speakThen("¡Vamos al parque! Arrastra a Emi al juego que te diga papá", "parque_intro", 1200, () => {
+      if(tok === parkToken) askPark();
+    });
+  }
+  function finishPark(){
+    const tok = parkToken;
+    parkLocked = true;
+    parkPrompt.textContent = "🌟 ¡Qué divertido! 🌟";
+    bigCelebration();
+    speakThen("¡Qué divertido! Emi jugó en todo el parque", "parque_finish", 1800, () => {
+      if(tok === parkToken) showMenu();
+    });
+  }
+  function leavePark(){ parkToken++; parkLocked = true; showMenu(); }
+  document.getElementById("parkHomeBtn").addEventListener("click", leavePark);
+  document.getElementById("parkRepeatBtn").addEventListener("click", () => {
+    if(parkLocked) return;
+    const ride = parkTarget();
+    speak("Emi, " + ride.ask.charAt(0).toLowerCase() + ride.ask.slice(1), "parque_ask_" + ride.id);
+  });
+  document.getElementById("parkMuteBtn").addEventListener("click", () => toggleMute());
+
   function startGame(){
     order = shuffledParts();
     currentIndex = 0;
@@ -3215,6 +3746,7 @@
      makes the loop infinite without an ever-growing strip of real slides. */
   const MENU_ITEMS = [
     { emoji:"🧑", label:"Partes del cuerpo",       start: startGame, c:["#ffb03a", "#ff7a1a", "#c85400"] },
+    { emoji:"🎠", label:"El parque", start: startParkGame, c:["#b4e04a","#6fbf2a","#4a8f14"] },
     { emoji:"🚗", label:"Vehículos",                start: startVehiclesGame, c:["#4db8ff", "#1f7ef0", "#1257b8"] },
     { emoji:"🔢", label:"Números",                  start: startNumbersGame, c:["#4fdc9a", "#17b877", "#0d8554"] },
     { emoji:"🔍", label:"Encuentra a tus amigos",   start: startBonusRound, c:["#ff7fb6", "#f0438a", "#b8245f"] },
@@ -3368,6 +3900,7 @@
     document.getElementById("memoramaMuteBtn").textContent = icon;
     document.getElementById("namephotoMuteBtn").textContent = icon;
     document.getElementById("abecedarioMuteBtn").textContent = icon;
+    document.getElementById("parkMuteBtn").textContent = icon;
     if(muted){
       if(window.speechSynthesis) window.speechSynthesis.cancel();
       if(currentAudio){ currentAudio.pause(); currentAudio = null; }
