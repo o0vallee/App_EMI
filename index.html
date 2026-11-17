@@ -119,7 +119,7 @@
   .icon-btn:active{ transform:translateY(5px); box-shadow:0 0 0 var(--edge); }
 
   /* ---------- Top bar (every game screen) ---------- */
-  #topbar{
+  .topbar{
     position:absolute; top:14px; left:0; right:0; display:flex;
     align-items:center; justify-content:space-between; gap:8px; padding:0 14px; z-index:5;
   }
@@ -131,7 +131,7 @@
   #stars:empty, #vehiclesStars:empty{ visibility:hidden; }
   .star{ font-size:clamp(13px,3.9vw,22px); line-height:1.15; filter:grayscale(1) opacity(.32); transition: all .3s ease; }
   .star.on{ filter:none; transform:scale(1.18); }
-  #controls{ display:flex; gap:8px; }
+  .controls{ display:flex; gap:8px; }
 
   /* One look for every "1 / 8", "Nivel 1 / 6", "Ronda 1 / 10" pill. */
   [id$="Progress"]{
@@ -157,9 +157,9 @@
   /* Height is tied to the actual space left under the topbar+prompt (185px) plus a
      bottom margin (20px), so the character can never overflow below the viewport,
      however short the window is. */
-  #stage{ position:relative; width:min(92vw,480px); height:min(calc(100vh - 205px), 620px); height:min(calc(100dvh - 205px), 620px); }
+  .char-stage{ position:relative; width:min(92vw,480px); height:min(calc(100vh - 205px), 620px); height:min(calc(100dvh - 205px), 620px); }
   /* Soft floor shadow so the character stands on something instead of floating. */
-  #stage::after{
+  .char-stage::after{
     content:""; position:absolute; left:50%; bottom:1.5%; width:46%; height:4.5%; translate:-50% 0;
     background:radial-gradient(ellipse at center,rgba(58,38,117,.26),rgba(58,38,117,0) 70%); z-index:-1;
   }
@@ -696,7 +696,7 @@
   .menu-arrow{ border:3px solid var(--line); }
   #stars, #vehiclesStars, #parkStars, #banoStars, .mg-stars, [id$="Progress"]{ border:3px solid var(--line); box-shadow:0 4px 0 var(--line); }
   .prompt-banner{ border:3px solid var(--line); box-shadow:0 6px 0 var(--line); }
-  #stage::after{ width:56%; height:5%; background:rgba(58,38,117,.22); border-radius:50%; }
+  .char-stage::after{ width:56%; height:5%; background:rgba(58,38,117,.22); border-radius:50%; }
 
   .menu-slide{ background:var(--a); border:4px solid var(--line); text-shadow:0 2px 0 rgba(0,0,0,.22); }
   .menu-slide::before,.menu-slide::after{ background:rgba(255,255,255,.18); }
@@ -757,6 +757,66 @@
   @keyframes clapR{
     0%,100%{ transform:translate(254px,290px) rotate(-24deg) translate(-254px,-290px); }
     50%{ transform:translate(254px,290px) rotate(-140deg) translate(-254px,-290px); }
+  }
+
+  /* ================= EMI VIVO: start-screen character that reacts to touch =================
+     Every reaction animates only transform/opacity, so the phone can run it on the
+     compositor without recalculating layout. Nothing here animates while Emi is idle. */
+  #charStart{ cursor:pointer; transform-origin:50% 92%; -webkit-tap-highlight-color:transparent; }
+  /* characters that are an SVG <g>: measure percentages on their own box, pivot at the feet */
+  .vivo-fill{ transform-box:fill-box; transform-origin:50% 100%; }
+  #esEmiGrab, #esTeacherGrab{ cursor:pointer; }
+  #charGame, .drag-char svg{ transform-origin:50% 96%; }
+  .eye-lid{ opacity:0; }
+  .blink .eye-lid{ opacity:1; }
+  .pupil{ transition:transform .12s ease-out; }
+  .emi-r-brinca{ animation:emiJump .9s cubic-bezier(.3,.6,.4,1); }
+  @keyframes emiJump{
+    0%,100%{ transform:translateY(0) scale(1,1) }
+    12%{ transform:translateY(0) scale(1.06,.92) }
+    40%{ transform:translateY(-11%) scale(.97,1.05) }
+    62%{ transform:translateY(0) scale(1.05,.94) }
+    80%{ transform:translateY(-4%) scale(1,1) }
+  }
+  .emi-r-cosquillas{ animation:emiWiggle 1s ease-in-out; }
+  @keyframes emiWiggle{
+    0%,100%{ transform:rotate(0) } 10%{ transform:rotate(-6deg) } 25%{ transform:rotate(6deg) }
+    40%{ transform:rotate(-6deg) } 55%{ transform:rotate(6deg) } 70%{ transform:rotate(-4deg) } 85%{ transform:rotate(3deg) }
+  }
+  .emi-r-zapatea{ animation:emiStomp .8s ease-in-out; }
+  @keyframes emiStomp{
+    0%,30%,60%,100%{ transform:translateY(0) } 15%,45%,75%{ transform:translateY(-4%) }
+  }
+  .emi-r-risa .head-rig{ animation:emiNod .8s ease-in-out; }
+  @keyframes emiNod{
+    0%,100%{ transform:rotate(0) } 20%{ transform:rotate(-7deg) } 45%{ transform:rotate(7deg) } 70%{ transform:rotate(-5deg) }
+  }
+  .emi-r-mareo{ animation:emiSway 1.7s ease-in-out; }
+  @keyframes emiSway{
+    0%,100%{ transform:rotate(0) } 20%{ transform:rotate(-8deg) } 45%{ transform:rotate(8deg) } 70%{ transform:rotate(-5deg) } 88%{ transform:rotate(3deg) }
+  }
+  .emi-r-mareo .pupil{ transition:none; animation:emiSpin .45s linear infinite; }
+  @keyframes emiSpin{
+    0%,100%{ transform:translate(5px,0) } 25%{ transform:translate(0,5px) } 50%{ transform:translate(-5px,0) } 75%{ transform:translate(0,-5px) }
+  }
+  .emi-r-parpadea .eye-lid{ animation:emiBlink2 .52s steps(1); }
+  @keyframes emiBlink2{ 0%{ opacity:1 } 22%{ opacity:0 } 50%{ opacity:1 } 72%,100%{ opacity:0 } }
+  .emi-wave-l .limb-l{ animation:emiWaveL 1.1s ease-in-out; }
+  .emi-wave-r .limb-r{ animation:emiWaveR 1.1s ease-in-out; }
+  @keyframes emiWaveL{
+    0%,100%{ transform:translate(146px,290px) rotate(24deg) translate(-146px,-290px) }
+    20%,60%{ transform:translate(146px,290px) rotate(152deg) translate(-146px,-290px) }
+    40%,80%{ transform:translate(146px,290px) rotate(118deg) translate(-146px,-290px) }
+  }
+  @keyframes emiWaveR{
+    0%,100%{ transform:translate(254px,290px) rotate(-24deg) translate(-254px,-290px) }
+    20%,60%{ transform:translate(254px,290px) rotate(-152deg) translate(-254px,-290px) }
+    40%,80%{ transform:translate(254px,290px) rotate(-118deg) translate(-254px,-290px) }
+  }
+  /* "Reduce motion" on the phone: keep the small gestures, drop the whole-body ones. */
+  @media (prefers-reduced-motion:reduce){
+    .emi-r-brinca, .emi-r-cosquillas, .emi-r-zapatea, .emi-r-mareo{ animation:none; }
+    .emi-r-mareo .pupil{ animation:none; }
   }
 </style>
 </head>
@@ -963,11 +1023,11 @@
   <div id="startScreen" class="screen">
     <h1>¡Hola, Emi! 🌟</h1>
     <p class="subtitle">Vamos a aprender las partes del cuerpo</p>
-    <div id="stage" style="height:min(50vh,420px); height:min(50dvh,420px); margin-bottom:20px;">
+    <div class="char-stage" style="height:min(50vh,420px); height:min(50dvh,420px); margin-bottom:20px;">
       <svg viewBox="0 0 400 600" id="charStart"></svg>
     </div>
     <button class="big-btn" id="playBtn">▶️ ¡Jugar!</button>
-    <footer class="hint-text">Con sonido y voz — sube el volumen 🔊</footer>
+    <footer class="hint-text">Toca a Emi 👆 y sube el volumen 🔊</footer>
     <div class="credit">Música y efectos: instrumentos FluidR3_GM (CC BY 3.0)</div>
   </div>
 
@@ -989,23 +1049,23 @@
 
   <!-- ============ GAME SCREEN ============ -->
   <div id="gameScreen" class="screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="gameHomeBtn" title="Menú">🏠</button>
       <div id="stars"></div>
-      <div id="controls">
+      <div class="controls">
         <button class="icon-btn" id="repeatBtn" title="Repetir">🔁</button>
         <button class="icon-btn" id="muteBtn" title="Sonido">🔊</button>
       </div>
     </div>
     <div id="prompt" class="prompt-banner">Toca...</div>
-    <div id="stage">
+    <div class="char-stage">
       <svg viewBox="0 0 400 600" id="charGame"></svg>
     </div>
   </div>
 
   <!-- ============ BONUS SCREEN: find the hidden friends ============ -->
   <div id="bonusScreen" class="screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="bonusHomeBtn" title="Menú">🏠</button>
       <div id="bonusProgress">1 / 8</div>
       <button class="icon-btn" id="bonusMuteBtn" title="Sonido">🔊</button>
@@ -1016,7 +1076,7 @@
 
   <!-- ============ VEHICLES SCREEN: drag each family member to their vehicle ============ -->
   <div id="vehiclesScreen" class="screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="vehiclesHomeBtn" title="Menú">🏠</button>
       <div id="vehiclesStars"></div>
       <button class="icon-btn" id="vehiclesMuteBtn" title="Sonido">🔊</button>
@@ -1084,7 +1144,7 @@
 
   <!-- ============ NUMBERS SCREEN: tap the number you're asked for ============ -->
   <div id="numbersScreen" class="screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="numbersHomeBtn" title="Menú">🏠</button>
       <div id="numbersProgress">1 / 20</div>
       <button class="icon-btn" id="numbersMuteBtn" title="Sonido">🔊</button>
@@ -1095,7 +1155,7 @@
 
   <!-- ============ COLORS SCREEN: watch the sequence, then repeat it ============ -->
   <div id="colorsScreen" class="screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="colorsHomeBtn" title="Menú">🏠</button>
       <div id="colorsProgress">Nivel 1 / 6</div>
       <button class="icon-btn" id="colorsMuteBtn" title="Sonido">🔊</button>
@@ -1106,7 +1166,7 @@
 
   <!-- ============ MEMORAMA SCREEN: flip cards to find the matching pair ============ -->
   <div id="memoramaScreen" class="screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="memoramaHomeBtn" title="Menú">🏠</button>
       <div id="memoramaProgress">Nivel 1 / 3</div>
       <button class="icon-btn" id="memoramaMuteBtn" title="Sonido">🔊</button>
@@ -1117,7 +1177,7 @@
 
   <!-- ============ NOMBRE Y FOTO SCREEN: drag each name to their photo ============ -->
   <div id="namephotoScreen" class="screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="namephotoHomeBtn" title="Menú">🏠</button>
       <div id="namephotoProgress">Nivel 1 / 4</div>
       <button class="icon-btn" id="namephotoMuteBtn" title="Sonido">🔊</button>
@@ -1131,7 +1191,7 @@
 
   <!-- ============ ABECEDARIO SCREEN: tap the letters, then tap them in order ============ -->
   <div id="abecedarioScreen" class="screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="abecedarioHomeBtn" title="Menú">🏠</button>
       <div id="abecedarioProgress">Nivel 1 / 6</div>
       <button class="icon-btn" id="abecedarioMuteBtn" title="Sonido">🔊</button>
@@ -1142,10 +1202,10 @@
 
   <!-- ============ PARK SCREEN: drag Emi to the ride you're asked for ============ -->
   <div id="parkScreen" class="screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="parkHomeBtn" title="Menú">🏠</button>
       <div id="parkStars"></div>
-      <div id="controls">
+      <div class="controls">
         <button class="icon-btn" id="parkRepeatBtn" title="Repetir">🔁</button>
         <button class="icon-btn" id="parkMuteBtn" title="Sonido">🔊</button>
       </div>
@@ -1317,7 +1377,7 @@
 
   <!-- ============ BATHROOM SCREEN: take Emi to the toilet when he says "pipí-popó" ============ -->
   <div id="banoScreen" class="screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="banoHomeBtn" title="Menú">🏠</button>
       <div id="banoStars"></div>
       <button class="icon-btn" id="banoMuteBtn" title="Sonido">🔊</button>
@@ -1410,10 +1470,10 @@
 
   <!-- ============ SCHOOL SCREEN: bring the teacher what she asks for ============ -->
   <div id="escuelaScreen" class="screen mg-screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="escuelaHomeBtn" title="Menú">🏠</button>
       <div id="escuelaStars" class="mg-stars"></div>
-      <div id="controls">
+      <div class="controls">
         <button class="icon-btn" id="escuelaRepeatBtn" title="Repetir">🔁</button>
         <button class="icon-btn mute-btn" title="Sonido">🔊</button>
       </div>
@@ -1450,7 +1510,8 @@
           </g>
         </g>
         <!-- teacher (original character) -->
-        <g id="esTeacher" transform="translate(296,322)" pointer-events="none" filter="url(#toon)">
+        <g id="esTeacher" transform="translate(296,322)" filter="url(#toon)">
+          <g class="vivo-body" pointer-events="none">
           <ellipse cx="0" cy="0" rx="34" ry="7" fill="#7a5a22" opacity=".25"/>
           <rect x="-15" y="-36" width="10" height="34" rx="5" fill="#f1c9a5"/><rect x="5" y="-36" width="10" height="34" rx="5" fill="#f1c9a5"/>
           <ellipse cx="-11" cy="-2" rx="10" ry="5" fill="#3a2675"/><ellipse cx="11" cy="-2" rx="10" ry="5" fill="#3a2675"/>
@@ -1467,6 +1528,8 @@
           <path d="M-9,-132 Q0,-124 9,-132" stroke="#c0453f" stroke-width="3" fill="none" stroke-linecap="round"/>
           <circle cx="-17" cy="-135" r="4" fill="#ff9aa8" opacity=".6"/><circle cx="17" cy="-135" r="4" fill="#ff9aa8" opacity=".6"/>
         </g>
+          <rect id="esTeacherGrab" x="-44" y="-192" width="88" height="200" rx="20" fill="transparent"/>
+        </g>
         <!-- what she is asking for -->
         <g id="esBubble" pointer-events="none" opacity="0">
           <path d="M228,196 L250,186 L232,176 Z" fill="#fff" stroke="#ffd23f" stroke-width="3" stroke-linejoin="round"/>
@@ -1475,7 +1538,7 @@
           <g class="es-bubble-in" filter="url(#toon)"><use id="esAskIcon" href="#es-it-lapiz" transform="translate(192,188) scale(1.2)"/></g>
         </g>
         <g id="esItems"></g>
-        <g id="esEmi"><ellipse cx="0" cy="0" rx="26" ry="6" fill="#7a5a22" opacity=".25"/><g class="pk-bob"><svg class="pk-doll" x="-42" y="-118" width="84" height="126" viewBox="0 0 400 600"></svg></g></g>
+        <g id="esEmi"><ellipse cx="0" cy="0" rx="26" ry="6" fill="#7a5a22" opacity=".25"/><g class="pk-bob"><svg class="pk-doll" x="-42" y="-118" width="84" height="126" viewBox="0 0 400 600"></svg></g><rect id="esEmiGrab" x="-48" y="-128" width="96" height="140" rx="20" fill="transparent"/></g>
         <g id="esCarry" pointer-events="none"></g>
       </svg>
     </div>
@@ -1483,7 +1546,7 @@
 
   <!-- ============ POOL SCREEN: jump in, then tap again and again to swim ============ -->
   <div id="albercaScreen" class="screen mg-screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="albercaHomeBtn" title="Menú">🏠</button>
       <div id="albercaStars" class="mg-stars"></div>
       <button class="icon-btn mute-btn" title="Sonido">🔊</button>
@@ -1530,7 +1593,7 @@
 
   <!-- ============ SHAPES SCREEN: drag each shape into its hole ============ -->
   <div id="figurasScreen" class="screen mg-screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="figurasHomeBtn" title="Menú">🏠</button>
       <div id="figurasStars" class="mg-stars"></div>
       <button class="icon-btn mute-btn" title="Sonido">🔊</button>
@@ -1552,7 +1615,7 @@
 
   <!-- ============ BALLOONS SCREEN: pop the balloons (then only the colour asked for) ============ -->
   <div id="globosScreen" class="screen mg-screen hidden">
-    <div id="topbar">
+    <div class="topbar">
       <button class="icon-btn" id="globosHomeBtn" title="Menú">🏠</button>
       <div id="globosProgress">0 / 6</div>
       <button class="icon-btn mute-btn" title="Sonido">🔊</button>
@@ -1592,7 +1655,7 @@
   // so every game that points at or animates a body part keeps working unchanged.
   function characterSVG(){
     const I = "#3a2675";   // ink
-    const SK = "#f6c9a4", SKD = "#e5a67f", SH = "#f04f3e", SHD = "#c9352a";
+    const SK = "#f6c9a4", SKD = "#e5a67f", SH = "#ffffff", SHD = "#d5dde8";   // skin, shirt (+ shaded side)
     // One arm, drawn hanging straight down from the shoulder; the caller rotates it.
     // Ink first (one fat silhouette), then the fills on top, so sleeve, forearm and hand
     // read as a single limb with one outline instead of separate outlined pieces.
@@ -1618,7 +1681,7 @@
         <path class="part-shape" d="M142,538 Q142,516 170,516 Q198,516 198,536 Q198,551 186,551 H156 Q142,551 142,538 Z" fill="#ffffff" stroke="${I}" stroke-width="7" stroke-linejoin="round"/>
         <path class="part-shape" d="M258,538 Q258,516 230,516 Q202,516 202,536 Q202,551 214,551 H244 Q258,551 258,538 Z" fill="#ffffff" stroke="${I}" stroke-width="7" stroke-linejoin="round"/>
         <path class="part-shape" d="M147,541 H195 Q194,547 186,547 H156 Q148,547 147,541 Z M253,541 H205 Q206,547 214,547 H244 Q252,547 253,541 Z" fill="#c9cfdc"/>
-        <path class="part-shape" d="M160,528 H180 M220,528 H240" stroke="${SH}" stroke-width="6" stroke-linecap="round" fill="none"/>
+        <path class="part-shape" d="M160,528 H180 M220,528 H240" stroke="#f04f3e" stroke-width="6" stroke-linecap="round" fill="none"/>
         <rect class="hit" x="136" y="514" width="128" height="60" rx="20"/>
         <rect class="hint-ring" x="138" y="516" width="124" height="54" rx="18"/>
       </g>
@@ -1648,8 +1711,8 @@
                                      C268,276 254,264 230,262 Q200,282 170,262 Z"
               fill="${SH}" stroke="${I}" stroke-width="7" stroke-linejoin="round"/>
         <path class="part-shape" d="M236,266 C254,268 264,278 264,296 L251,401 Q238,406 224,409 C236,362 242,312 236,266 Z" fill="${SHD}"/>
-        <path class="part-shape" d="M150,292 Q148,330 156,366" stroke="#ff8a76" stroke-width="9" fill="none" stroke-linecap="round"/>
-        <path class="part-shape" d="M174,263 Q200,284 226,263" stroke="#ffffff" stroke-width="8" fill="none" stroke-linecap="round"/>
+        <rect class="part-shape" x="208" y="304" width="26" height="24" rx="6" fill="none" stroke="#b9c4d4" stroke-width="5"/>
+        <path class="part-shape" d="M174,263 Q200,284 226,263" stroke="#b9c4d4" stroke-width="7" fill="none" stroke-linecap="round"/>
         <rect class="hit" x="138" y="266" width="124" height="146" rx="36"/>
         <rect class="hint-ring" x="140" y="268" width="120" height="142" rx="36"/>
       </g>
@@ -1693,12 +1756,16 @@
         <path class="part-shape brow-sad" d="M212,110 L252,124" stroke="${I}" stroke-width="7" fill="none" stroke-linecap="round"/>
         <ellipse class="part-shape" cx="167" cy="152" rx="22" ry="25" fill="#ffffff" stroke="${I}" stroke-width="6"/>
         <ellipse class="part-shape" cx="233" cy="152" rx="22" ry="25" fill="#ffffff" stroke="${I}" stroke-width="6"/>
-        <circle class="part-shape" cx="171" cy="155" r="15" fill="#6a3c19"/>
-        <circle class="part-shape" cx="229" cy="155" r="15" fill="#6a3c19"/>
-        <circle class="part-shape" cx="171" cy="155" r="7.5" fill="#1c0f07"/>
-        <circle class="part-shape" cx="229" cy="155" r="7.5" fill="#1c0f07"/>
-        <circle class="part-shape" cx="177" cy="147" r="6" fill="#fff"/>
-        <circle class="part-shape" cx="235" cy="147" r="6" fill="#fff"/>
+        <circle class="part-shape pupil" cx="171" cy="155" r="15" fill="#6a3c19"/>
+        <circle class="part-shape pupil" cx="229" cy="155" r="15" fill="#6a3c19"/>
+        <circle class="part-shape pupil" cx="171" cy="155" r="7.5" fill="#1c0f07"/>
+        <circle class="part-shape pupil" cx="229" cy="155" r="7.5" fill="#1c0f07"/>
+        <circle class="part-shape pupil" cx="177" cy="147" r="6" fill="#fff"/>
+        <circle class="part-shape pupil" cx="235" cy="147" r="6" fill="#fff"/>
+        <!-- eyelids: hidden until the svg gets the "blink" class (or a blink animation) -->
+        <ellipse class="part-shape eye-lid" cx="167" cy="152" rx="22" ry="25" fill="${SK}" stroke="${I}" stroke-width="6"/>
+        <ellipse class="part-shape eye-lid" cx="233" cy="152" rx="22" ry="25" fill="${SK}" stroke="${I}" stroke-width="6"/>
+        <path class="part-shape eye-lid" d="M150,158 Q167,172 184,158 M216,158 Q233,172 250,158" stroke="${I}" stroke-width="6" fill="none" stroke-linecap="round"/>
         <rect class="hit" x="140" y="120" width="120" height="60" rx="26"/>
         <rect class="hint-ring" x="142" y="122" width="116" height="56" rx="24"/>
       </g>
@@ -1764,8 +1831,11 @@
                <ellipse cx="78" cy="74" rx="7" ry="4.5" fill="#ff9d9d"/><ellipse cx="122" cy="74" rx="7" ry="4.5" fill="#ff9d9d"/>`}
       <ellipse cx="87" cy="60" rx="8" ry="9.5" fill="#ffffff" stroke="${I}" stroke-width="3.5"/>
       <ellipse cx="113" cy="60" rx="8" ry="9.5" fill="#ffffff" stroke="${I}" stroke-width="3.5"/>
-      <circle cx="88" cy="62" r="4.6" fill="#3a2212"/><circle cx="112" cy="62" r="4.6" fill="#3a2212"/>
-      <circle cx="90" cy="59" r="1.8" fill="#fff"/><circle cx="114" cy="59" r="1.8" fill="#fff"/>
+      <circle class="pupil" cx="88" cy="62" r="4.6" fill="#3a2212"/><circle class="pupil" cx="112" cy="62" r="4.6" fill="#3a2212"/>
+      <circle class="pupil" cx="90" cy="59" r="1.8" fill="#fff"/><circle class="pupil" cx="114" cy="59" r="1.8" fill="#fff"/>
+      <ellipse class="eye-lid" cx="87" cy="60" rx="8" ry="9.5" fill="${skin}" stroke="${I}" stroke-width="3.5"/>
+      <ellipse class="eye-lid" cx="113" cy="60" rx="8" ry="9.5" fill="${skin}" stroke="${I}" stroke-width="3.5"/>
+      <path class="eye-lid" d="M81,63 Q87,68 93,63 M107,63 Q113,68 119,63" stroke="${I}" stroke-width="3" fill="none" stroke-linecap="round"/>
       ${papa ? "" : `<circle cx="87" cy="60" r="12" fill="none" stroke="${I}" stroke-width="3"/><circle cx="113" cy="60" r="12" fill="none" stroke="${I}" stroke-width="3"/><path d="M99,60 H101" stroke="${I}" stroke-width="3"/>`}
       </g>
       <circle cx="50" cy="208" r="9" fill="${skin}" stroke="${I}" stroke-width="5"/>
@@ -1773,13 +1843,19 @@
     `;
   }
 
-  document.getElementById("charStart").innerHTML = characterSVG();
-  document.getElementById("charGame").innerHTML = characterSVG();
-  // Start-screen character is decorative only.
-  document.getElementById("charStart").querySelectorAll(".hit").forEach(h => h.style.pointerEvents = "none");
-  document.querySelectorAll(".drag-char").forEach(el => {
-    el.querySelector("svg").innerHTML = familyDollSVG(el.dataset.char);
-  });
+  // Each screen's copy of the drawing is created the first time that screen opens
+  // (only the start screen's exists at launch), which keeps the initial page small.
+  function ensureEmi(svg){
+    if(svg && !svg.firstElementChild) svg.innerHTML = characterSVG();
+    return svg;
+  }
+  function ensureFamilyDolls(){
+    document.querySelectorAll(".drag-char").forEach(el => {
+      const svg = el.querySelector("svg");
+      if(!svg.firstElementChild) svg.innerHTML = familyDollSVG(el.dataset.char);
+    });
+  }
+  ensureEmi(document.getElementById("charStart"));
 
   /* ================= AUDIO ================= */
   let audioCtx = null;
@@ -2027,6 +2103,8 @@
   // speakThen) can listen for the right kind of "it's done" event.
   function speak(text, key){
     if(muted) return null;
+    // A timer left over from a game that was closed must not talk over the menu.
+    if(!menuScreen.classList.contains("hidden")) return null;
     if(window.speechSynthesis) window.speechSynthesis.cancel();
     if(currentAudio){ currentAudio.pause(); currentAudio = null; }
     const src = key && AUDIO_DATA[key];
@@ -2053,6 +2131,7 @@
   // "¡Genial!" line). Listening for the utterance's own "end" event is exact regardless
   // of how fast or slow that particular voice speaks.
   function speakThen(text, key, minMs, after){
+    const nav = navToken;      // if the player goes back to the menu meanwhile, `after` is dropped
     const result = speak(text, key);
     const minTimer = new Promise(res => setTimeout(res, minMs));
     let speechTimer;
@@ -2071,7 +2150,7 @@
     } else {
       speechTimer = Promise.resolve(); // muted, or no speech support at all
     }
-    Promise.all([minTimer, speechTimer]).then(after);
+    Promise.all([minTimer, speechTimer]).then(() => { if(nav === navToken) after(); });
   }
 
   /* ================= CONFETTI ================= */
@@ -2121,7 +2200,11 @@
   const menuScreen = document.getElementById("menuScreen");
   const gameScreen = document.getElementById("gameScreen");
 
+  let navToken = 0;   // bumped on every return to the menu; see speakThen()
   function showMenu(){
+    navToken++;
+    if(window.speechSynthesis) window.speechSynthesis.cancel();
+    if(currentAudio){ currentAudio.pause(); currentAudio = null; }
     [startScreen, gameScreen, document.getElementById("bonusScreen"),
      document.getElementById("vehiclesScreen"), document.getElementById("numbersScreen"),
      document.getElementById("colorsScreen"), document.getElementById("memoramaScreen"),
@@ -2197,6 +2280,7 @@
 
   function celebrate(el){
     const part = currentPart();
+    gameVivo.react(part.id, "l");            // the part that was just found does its gesture
     gameSvg.querySelectorAll(`g[data-part="${part.id}"] .part-shape`).forEach(s=>s.classList.add("glow"));
     burstConfetti(45);
     playCorrect();
@@ -2550,6 +2634,7 @@
   }
 
   function startVehiclesGame(){
+    ensureFamilyDolls();
     vehiclesMatched = new Set();
     vehiclesLocked = false;
     buildVehiclesStars();
@@ -2585,6 +2670,11 @@
       dragging = false;
       el.classList.remove("dragging");
       try{ el.releasePointerCapture(e.pointerId); }catch(err){}
+      if(Math.abs(baseX) + Math.abs(baseY) < 8){     // a tap, not a drag: the character reacts
+        el.style.transform = "";
+        vehicleTapReaction(el, e);
+        return;
+      }
       checkVehicleDrop(el);
     });
   }
@@ -3781,7 +3871,6 @@
   let parkToken = 0;      // bumped whenever the game is left/restarted, so stale timers and animations stop
   let parkEmiPos = { x:PARK_HOME.x, y:PARK_HOME.y };
 
-  pkEmi.querySelector(".pk-doll").innerHTML = characterSVG();
 
   function parkSetEmi(x, y, rot, scale){
     parkEmiPos = { x:x, y:y };
@@ -4001,7 +4090,7 @@
   // Drag: pointer position is converted into the SVG's own coordinates, so it stays
   // exact however the scene is scaled or letterboxed on screen.
   (function initParkDrag(){
-    let dragging = false, offX = 0, offY = 0;
+    let dragging = false, offX = 0, offY = 0, moved = false, downAt = null;
     function toSvg(e){
       const m = parkSvg.getScreenCTM();
       if(!m) return { x:0, y:0 };
@@ -4012,6 +4101,7 @@
       dragging = true;
       const p = toSvg(e);
       offX = parkEmiPos.x - p.x; offY = parkEmiPos.y - p.y;
+      moved = false; downAt = p;
       pkEmi.classList.add("dragging");
       pkArrow.classList.remove("show");
       try{ pkEmi.setPointerCapture(e.pointerId); }catch(err){}
@@ -4021,6 +4111,8 @@
     pkEmi.addEventListener("pointermove", e => {
       if(!dragging) return;
       const p = toSvg(e);
+      if(!moved && Math.hypot(p.x - downAt.x, p.y - downAt.y) < 7) return;   // still a tap, not a drag
+      moved = true;
       const x = Math.max(20, Math.min(340, p.x + offX)), y = Math.max(110, Math.min(596, p.y + offY));
       parkSetEmi(x, y, 0, 1.08);
       const over = parkRideAt(x, y - 55);
@@ -4032,6 +4124,10 @@
       pkEmi.classList.remove("dragging");
       try{ pkEmi.releasePointerCapture(e.pointerId); }catch(err){}
       parkSvg.querySelectorAll(".pk-spot").forEach(s => s.classList.remove("hover"));
+      if(!moved){      // tapped without dragging: Emi reacts (see EmiVivo) and stays put
+        pkVivo.reactAt((downAt.x - (parkEmiPos.x - 42)) / 84, (downAt.y - (parkEmiPos.y - 118)) / 126);
+        return;
+      }
       const over = parkRideAt(parkEmiPos.x, parkEmiPos.y - 55);
       if(over && over.id === parkTarget().id) parkCorrect(over);
       else if(over) parkWrongDrop();
@@ -4042,6 +4138,7 @@
   })();
 
   function startParkGame(){
+    ensureEmi(pkEmi.querySelector(".pk-doll"));
     parkToken++;
     const tok = parkToken;
     parkOrder = shuffledIndices(PARK_RIDES.length).map(i => PARK_RIDES[i]);
@@ -4109,7 +4206,6 @@
   let banoSpot = [0,0];
   let banoDeadline = 0, banoTotal = 1;
 
-  bnEmi.querySelector(".pk-doll").innerHTML = characterSVG();
 
   function banoSetEmi(x, y, rot, scale){
     banoPos = { x:x, y:y };
@@ -4284,7 +4380,7 @@
   }
 
   (function initBanoDrag(){
-    let offX = 0, offY = 0;
+    let offX = 0, offY = 0, moved = false, downAt = null;
     function toSvg(e){
       const m = banoSvg.getScreenCTM();
       if(!m) return { x:0, y:0 };
@@ -4295,6 +4391,7 @@
       banoDragging = true;
       const p = toSvg(e);
       offX = banoPos.x - p.x; offY = banoPos.y - p.y;
+      moved = false; downAt = p;
       bnEmi.classList.add("dragging");
       try{ bnEmi.setPointerCapture(e.pointerId); }catch(err){}
       if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
@@ -4303,6 +4400,8 @@
     bnEmi.addEventListener("pointermove", e => {
       if(!banoDragging) return;
       const p = toSvg(e);
+      if(!moved && Math.hypot(p.x - downAt.x, p.y - downAt.y) < 7) return;   // still a tap, not a drag
+      moved = true;
       banoSetEmi(Math.max(24, Math.min(336, p.x + offX)), Math.max(150, Math.min(594, p.y + offY)), 0, 1.06);
       bnToiletGlow.classList.toggle("hover", banoOverToilet());
     });
@@ -4312,6 +4411,10 @@
       bnEmi.classList.remove("dragging");
       try{ bnEmi.releasePointerCapture(e.pointerId); }catch(err){}
       bnToiletGlow.classList.remove("hover");
+      if(!moved){      // tapped without dragging: a gesture while he plays (not while he needs to go)
+        if(banoState === "play") bnVivo.reactAt((downAt.x - (banoPos.x - 42)) / 84, (downAt.y - (banoPos.y - 118)) / 126);
+        return;
+      }
       banoSetEmi(banoPos.x, banoPos.y, 0, 1);
       if(banoOverToilet()){
         if(banoState === "need") banoSuccess();
@@ -4324,6 +4427,7 @@
   })();
 
   function startBanoGame(){
+    ensureEmi(bnEmi.querySelector(".pk-doll"));
     banoToken++;
     const tok = banoToken;
     banoStarsOn = 0;
@@ -4395,8 +4499,8 @@
   }
   // A draggable/animatable Emi: returns {set(x,y,rot,scale), hop(x,y,ms,scale), pos, face(mood)}
   function mgDoll(g){
-    g.querySelector(".pk-doll").innerHTML = characterSVG();
     const d = { pos:{ x:0, y:0 } };
+    d.ensure = () => ensureEmi(g.querySelector(".pk-doll"));   // drawn the first time the game opens
     d.set = (x, y, rot, scale) => {
       d.pos = { x:x, y:y };
       g.setAttribute("transform", "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ") rotate(" + (rot||0).toFixed(1) + ") scale(" + (scale==null?1:scale).toFixed(3) + ")");
@@ -4512,6 +4616,7 @@
     });
   }
   function startEscuelaGame(){
+    esEmi.ensure();
     esRun.reset();
     esRound = 0; esAsked = []; esLocked = true;
     mgStars(document.getElementById("escuelaStars"), ES_SHOWN.length, 0);
@@ -4635,6 +4740,7 @@
     }
   });
   function startAlbercaGame(){
+    alEmi.ensure();
     alRun.reset();
     alLap = 0; alDir = 1; alStroke = 0; alState = "wait";
     mgStars(document.getElementById("albercaStars"), AL_STROKES.length, 0);
@@ -4884,7 +4990,254 @@
 
   document.querySelectorAll(".mute-btn").forEach(b => b.addEventListener("click", () => toggleMute()));
 
+  /* ================= EMI VIVO: the start-screen character reacts to touch =================
+     Two layers on purpose:
+       EmiReactCore  pure decisions (which reaction, how far the eyes move, when to blink).
+                     No DOM, no timers, no audio, so it runs under Node for the unit tests
+                     (emi-reacciones.test.js reads this exact block out of the page).
+       EmiVivo       the thin view: one pointerdown listener, one throttled pointermove
+                     listener, CSS classes for the animations. No work at all while idle
+                     except one timer per blink. */
+  /*<emi-react-core>*/
+  const EmiReactCore = (function(){
+    const PART_REACTION = {
+      cabeza:"brinca", orejas:"brinca", barriga:"cosquillas", manos:"saluda", brazos:"saluda",
+      ojos:"parpadea", nariz:"risa", boca:"risa", piernas:"zapatea", pies:"zapatea"
+    };
+    const DURATION = { brinca:900, cosquillas:1000, saluda:1100, parpadea:520, risa:800, zapatea:800, mareo:1700 };   // ms
+    const DIZZY_TAPS = 5;        // this many taps...
+    const DIZZY_WINDOW = 2600;   // ...within this many ms make Emi dizzy
+    const EYE_MAX = 6;           // furthest the pupils move, in drawing units
+    const EYE_REACH = 160;       // finger distance (drawing units) at which they reach EYE_MAX
+    const BLINK_MIN = 2400, BLINK_SPREAD = 3200;   // idle blink every 2.4-5.6 s
+
+    function reactionFor(part){
+      return Object.prototype.hasOwnProperty.call(PART_REACTION, part) ? PART_REACTION[part] : null;
+    }
+    // Pupil offset that looks towards a point dx,dy away from the eyes. Never longer than max.
+    function eyeOffset(dx, dy, max, reach){
+      max = max == null ? EYE_MAX : max;
+      reach = reach == null ? EYE_REACH : reach;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if(!isFinite(d) || d === 0) return { x:0, y:0 };
+      const k = Math.min(1, d / reach) * max / d;
+      return { x:dx * k, y:dy * k };
+    }
+    function createState(now){
+      return { current:null, busyUntil:0, taps:[], nextBlink:(now || 0) + BLINK_MIN };
+    }
+    function isBusy(state, now){ return now < state.busyUntil; }
+    // A tap on `part` at time `now`. Returns the reaction to play, or null to ignore the tap.
+    // One reaction at a time: taps that land during a reaction are dropped instead of queued,
+    // except that enough of them in a row interrupt it with "mareo".
+    function tap(state, part, now, simple){
+      if(!reactionFor(part)) return null;
+      if(isBusy(state, now) && state.current === "mareo") return null;
+      state.taps = state.taps.filter(t => now - t < DIZZY_WINDOW);
+      state.taps.push(now);
+      let reaction;
+      if(state.taps.length >= DIZZY_TAPS){ reaction = "mareo"; state.taps = []; }
+      else if(isBusy(state, now)) return null;
+      else reaction = reactionFor(part);
+      if(simple) reaction = simpleReaction(reaction);
+      state.current = reaction;
+      state.busyUntil = now + DURATION[reaction];
+      state.nextBlink = Math.max(state.nextBlink, state.busyUntil + 400);   // never blink mid-reaction
+      return reaction;
+    }
+    function shouldBlink(state, now){ return !isBusy(state, now) && now >= state.nextBlink; }
+    function scheduleBlink(state, now, rnd){
+      const r = Math.max(0, Math.min(1, +rnd || 0));
+      state.nextBlink = now + BLINK_MIN + r * BLINK_SPREAD;
+      return state.nextBlink;
+    }
+    function waveSide(x, centerX){ return x < centerX ? "l" : "r"; }   // which arm waves
+    // Characters drawn without a head/arm rig (papá, mamá, the teacher) can only do the
+    // whole-body gestures, so the finer ones fall back to the nearest of those.
+    const SIMPLE = { brinca:"brinca", cosquillas:"cosquillas", zapatea:"zapatea", mareo:"mareo",
+                     saluda:"cosquillas", parpadea:"brinca", risa:"brinca" };
+    function simpleReaction(reaction){
+      return Object.prototype.hasOwnProperty.call(SIMPLE, reaction) ? SIMPLE[reaction] : null;
+    }
+    // Which body part a tap landed on, from its position inside the character's box
+    // (fx, fy from 0 to 1; 0,0 is the top-left corner). Used where the drawing itself
+    // can't tell us, e.g. the small draggable Emi in the park.
+    function partFromPoint(fx, fy){
+      if(!(fy >= 0)) fy = 0;
+      if(fy < 0.42) return "cabeza";
+      if(fy < 0.74) return (fx < 0.24 || fx > 0.76) ? "manos" : "barriga";
+      return "pies";
+    }
+    return { PART_REACTION, DURATION, DIZZY_TAPS, DIZZY_WINDOW, EYE_MAX, EYE_REACH, BLINK_MIN, BLINK_SPREAD, SIMPLE,
+             reactionFor, simpleReaction, partFromPoint, eyeOffset, createState, isBusy, tap, shouldBlink, scheduleBlink, waveSide };
+  })();
+  if(typeof module !== "undefined" && module.exports) module.exports = EmiReactCore;
+  /*</emi-react-core>*/
+
+  // Every live character registers here; one shared timer makes the visible ones blink,
+  // so twenty characters cost the same as one.
+  const VIVO_ALL = [];
+  setInterval(() => {
+    if(document.hidden) return;
+    const now = performance.now();
+    for(let i = 0; i < VIVO_ALL.length; i++) VIVO_ALL[i].blinkIfDue(now);
+  }, 600);
+
+  // Makes a character react to touch.
+  //   el    the element that receives the reaction classes: the character's <svg>, or a <g>
+  //         around it (then pass fill:true so percentages are measured on its own box).
+  //   opts  screen    the game screen it lives on; it only blinks while that screen shows
+  //         area      element whose pointer moves the eyes follow (needs lookSvg)
+  //         lookSvg   the <svg viewBox="0 0 400 600"> used to locate the eyes on screen
+  //         listen    true: taps are read from the drawing's own data-part groups
+  //         simple    true: no head/arm rig, whole-body gestures only
+  //         rig       false: leave the happy/clap classes alone (the game drives them)
+  // Returns { react(part, side), reactAt(fx, fy), stop() }.
+  function EmiVivo(el, opts){
+    opts = opts || {};
+    const core = EmiReactCore;
+    const state = core.createState(performance.now());
+    const CLASSES = Object.keys(core.DURATION).map(r => "emi-r-" + r).concat(["emi-wave-l", "emi-wave-r"]);
+    const useRig = opts.rig !== false && !opts.simple;
+    let endTimer = 0, lookRaf = 0, lookReset = 0, lookPoint = null, pupils = null, stopped = false;
+    if(opts.fill) el.classList.add("vivo-fill");
+
+    function setPupils(x, y){
+      if(!pupils || !pupils.length) pupils = el.querySelectorAll(".pupil");
+      const t = (x || y) ? "translate(" + x.toFixed(1) + "px," + y.toFixed(1) + "px)" : "";
+      pupils.forEach(p => { p.style.transform = t; });
+    }
+    function clearReaction(){
+      CLASSES.forEach(c => el.classList.remove(c));
+      if(!useRig) return;
+      const head = el.querySelector(".head-rig");
+      if(head) head.classList.remove("happy");
+      el.querySelectorAll(".limb-l, .limb-r").forEach(l => l.classList.remove("clap"));
+    }
+    function sound(r){
+      if(r === "brinca"){ tone(523, 0, .1, "triangle", .14); tone(784, .1, .16, "triangle", .14); }
+      else if(r === "cosquillas"){ [0, .12, .24, .36, .48].forEach((d, i) => tone(700 + (i % 2) * 180, d, .09, "sine", .1)); }
+      else if(r === "saluda"){ tone(660, 0, .12, "sine", .12); tone(880, .14, .14, "sine", .12); }
+      else if(r === "parpadea"){ tone(1200, 0, .05, "sine", .06); }
+      else if(r === "risa"){ [0, .14, .28].forEach((d, i) => tone(620 + i * 90, d, .1, "triangle", .1)); }
+      else if(r === "zapatea"){ [0, .25, .5].forEach(d => tone(180, d, .08, "square", .08)); }
+      else if(r === "mareo"){ [0, 1, 2, 3, 4, 5].forEach(i => tone(640 - i * 55, i * .2, .22, "sine", .09)); }
+    }
+    function play(reaction, side){
+      clearTimeout(endTimer);
+      clearReaction();
+      void el.getBoundingClientRect();        // lets the same CSS animation restart if repeated
+      el.classList.add("emi-r-" + reaction);
+      if(useRig){
+        const head = el.querySelector(".head-rig");
+        if(reaction === "brinca"){
+          if(head) head.classList.add("happy");
+          el.querySelectorAll(".limb-l, .limb-r").forEach(l => l.classList.add("clap"));
+        } else if(reaction === "cosquillas" && head){
+          head.classList.add("happy");
+        }
+      }
+      if(reaction === "saluda") el.classList.add("emi-wave-" + (side || "l"));
+      if(reaction === "mareo") setPupils(0, 0);
+      if(opts.sound !== false) sound(reaction);
+      endTimer = setTimeout(clearReaction, core.DURATION[reaction]);
+    }
+    function react(part, side){
+      if(stopped) return null;
+      const reaction = core.tap(state, part, performance.now(), !!opts.simple);
+      if(reaction) play(reaction, side);
+      return reaction;
+    }
+    function reactAt(fx, fy){ return react(core.partFromPoint(fx, fy), fx < 0.5 ? "l" : "r"); }
+    function onDown(e){
+      const g = e.target && e.target.closest ? e.target.closest("g[data-part]") : null;
+      if(!g) return;
+      if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      const box = el.getBoundingClientRect();
+      react(g.getAttribute("data-part"), core.waveSide(e.clientX, box.left + box.width / 2));
+    }
+    // Eye-follow: at most one update per frame, and only while a finger/mouse is moving.
+    function look(){
+      lookRaf = 0;
+      if(stopped || !lookPoint || (state.current === "mareo" && core.isBusy(state, performance.now()))) return;
+      const m = opts.lookSvg.getScreenCTM();
+      if(!m || !m.a) return;
+      const o = core.eyeOffset((lookPoint.x - (m.e + 200 * m.a)) / m.a, (lookPoint.y - (m.f + 152 * m.d)) / m.d);
+      setPupils(o.x, o.y);
+    }
+    function onMove(e){
+      lookPoint = { x:e.clientX, y:e.clientY };
+      if(!lookRaf) lookRaf = requestAnimationFrame(look);
+      clearTimeout(lookReset);
+      lookReset = setTimeout(() => setPupils(0, 0), 900);    // eyes drift back when the finger stops
+    }
+    const api = {
+      react, reactAt,
+      blinkIfDue(now){
+        if(stopped || (opts.screen && opts.screen.classList.contains("hidden"))) return;
+        if(!core.shouldBlink(state, now)) return;
+        core.scheduleBlink(state, now, Math.random());
+        el.classList.add("blink");
+        setTimeout(() => el.classList.remove("blink"), 130);
+      },
+      stop(){
+        if(stopped) return;
+        stopped = true;
+        if(opts.listen) el.removeEventListener("pointerdown", onDown);
+        if(opts.area && opts.lookSvg){
+          opts.area.removeEventListener("pointermove", onMove);
+          opts.area.removeEventListener("pointerdown", onMove);
+        }
+        clearTimeout(endTimer); clearTimeout(lookReset);
+        if(lookRaf){ cancelAnimationFrame(lookRaf); lookRaf = 0; }
+        clearReaction();
+        el.classList.remove("blink");
+        setPupils(0, 0);
+        const i = VIVO_ALL.indexOf(api);
+        if(i >= 0) VIVO_ALL.splice(i, 1);
+      }
+    };
+    if(opts.listen) el.addEventListener("pointerdown", onDown);
+    if(opts.area && opts.lookSvg){
+      opts.area.addEventListener("pointermove", onMove, { passive:true });
+      opts.area.addEventListener("pointerdown", onMove, { passive:true });
+    }
+    VIVO_ALL.push(api);
+    return api;
+  }
+
+  /* ---- the characters of each game ---- */
+  // Body parts: a correct answer makes Emi do that part's gesture (the game keeps driving
+  // the clap/happy face itself), and his eyes follow the finger.
+  const gameVivo = EmiVivo(gameSvg, { screen:gameScreen, area:gameScreen, lookSvg:gameSvg, rig:false, sound:false });
+  // Park, bathroom, school, pool: the small Emi. A tap that isn't a drag is a gesture.
+  const pkVivo = EmiVivo(pkEmi.querySelector(".pk-bob"), { screen:parkScreen, fill:true });
+  const bnVivo = EmiVivo(bnEmi.querySelector(".pk-bob"), { screen:banoScreen, fill:true });
+  const esEmiEl = document.getElementById("esEmi");
+  const esVivo = EmiVivo(esEmiEl.querySelector(".pk-bob"), { screen:escuelaScreen, fill:true });
+  EmiVivo(document.getElementById("alEmi").querySelector(".pk-bob"), { screen:albercaScreen, fill:true });   // pool: blinks only, every tap there is a stroke
+  esEmiEl.addEventListener("pointerdown", e => {
+    if(esLocked) return;                      // busy carrying something to the teacher
+    if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    const p = mgSvgPoint(escuelaSvg, e);
+    esVivo.reactAt((p.x - (esEmi.pos.x - 42)) / 84, (p.y - (esEmi.pos.y - 118)) / 126);
+  });
+  // The teacher: no rig, so whole-body gestures.
+  const teacherVivo = EmiVivo(esTeacher.querySelector(".vivo-body"), { screen:escuelaScreen, fill:true, simple:true });
+  document.getElementById("esTeacherGrab").addEventListener("pointerdown", e => {
+    if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    const p = mgSvgPoint(escuelaSvg, e);
+    teacherVivo.reactAt(0.5, (p.y - (322 - 190)) / 190);
+  });
+  // Vehicles: papá, mamá and Emi. Called by the drag code when a press ends without moving.
+  function vehicleTapReaction(dragEl, e){
+    if(!dragEl._vivo) dragEl._vivo = EmiVivo(dragEl.querySelector("svg"), { screen:vehiclesScreen, simple:dragEl.dataset.char !== "emi" });
+    const r = dragEl.getBoundingClientRect();
+    dragEl._vivo.reactAt((e.clientX - r.left) / (r.width || 1), (e.clientY - r.top) / (r.height || 1));
+  }
+
   function startGame(){
+    ensureEmi(gameSvg);
     order = shuffledParts();
     currentIndex = 0;
     buildStars();
@@ -4914,10 +5267,12 @@
     }
   });
 
+  const emiVivo = EmiVivo(document.getElementById("charStart"), { screen:startScreen, area:startScreen, lookSvg:document.getElementById("charStart"), listen:true });
   document.getElementById("playBtn").addEventListener("click", ()=>{
     ctx(); // unlock audio on user gesture
     if(window.speechSynthesis) window.speechSynthesis.resume();
     startMusic();
+    emiVivo.stop();
     startScreen.classList.add("hidden");
     menuScreen.classList.remove("hidden");
     settleMenuTrack(); // re-measure now that the carousel is actually visible/laid out
