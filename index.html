@@ -599,6 +599,76 @@
   }
   #banoTimer.show{ opacity:1; }
   #banoTimer i{ display:block; height:100%; width:100%; border-radius:999px; background:#3ecf8e; transform-origin:left center; }
+
+  /* ---------- Shared pieces for the scene minigames (school, pool, shapes, balloons) ---------- */
+  .mg-screen{ justify-content:flex-start; padding:185px 8px 0; }
+  .mg-stars{
+    display:flex; flex-wrap:nowrap; justify-content:center; gap:1px; min-width:0;
+    background:#fff; padding:7px 12px; border-radius:999px;
+    box-shadow:0 5px 0 var(--edge), 0 8px 14px rgba(58,38,117,.12);
+  }
+  .mg-stage{
+    position:relative; width:min(96vw,560px);
+    height:calc(100vh - 199px); height:calc(100dvh - 199px);
+    border-radius:34px; overflow:hidden; touch-action:none;
+    box-shadow:0 0 0 4px rgba(255,255,255,.95), 0 10px 0 4px rgba(58,38,117,.10);
+  }
+  .mg-svg{ width:100%; height:100%; display:block; overflow:hidden; touch-action:none; }
+  .mg-svg .pk-doll{ width:84px; height:126px; overflow:visible; pointer-events:none; }
+  .mg-svg .pk-doll *{ pointer-events:none; }
+  .mg-svg text{ font-family:'Fredoka',ui-rounded,system-ui,sans-serif; font-weight:700; }
+  .mg-busy .pk-bob{ animation:none; }
+
+  /* school */
+  #escuelaStage{ background:#fff1d6; }
+  .es-item{ cursor:pointer; }
+  .es-item .es-plate{ fill:#fff; stroke:#ffd23f; stroke-width:3; }
+  .es-item.wrong{ animation:shake .35s ease; }
+  .es-item.carried{ pointer-events:none; }
+  .es-item.carried .es-plate{ opacity:0; }
+  #esBubble{ transition:opacity .2s ease; }
+  #esBubble .es-bubble-in{ animation:bnPop .9s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* pool */
+  #albercaStage{ background:#cdeeff; }
+  #alWave{ animation:alWave 2.2s linear infinite; }
+  @keyframes alWave{ from{ transform:translateX(0) } to{ transform:translateX(-60px) } }
+  #alHand{ opacity:0; transition:opacity .2s ease; font-size:54px; }
+  #alHand.show{ opacity:1; animation:alTap .55s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+  @keyframes alTap{ 0%,100%{ transform:scale(1) } 50%{ transform:scale(.8) } }
+  .al-flag{ opacity:.35; transition:opacity .2s ease; }
+  .al-flag.on{ opacity:1; }
+  .al-flag.on .al-flag-star{ animation:pkBob .6s ease-in-out infinite; }
+
+  /* shapes */
+  #figurasStage{ background:#ffe9c2; }
+  .fg-piece{ cursor:grab; }
+  .fg-piece.placed{ pointer-events:none; }
+  .fg-piece.wrong .fg-in{ animation:shake .35s ease; }
+  .fg-hole.done{ opacity:0; }
+
+  /* balloons */
+  #globosStage{ background:linear-gradient(180deg,#8fd3ff 0%,#d9f1ff 70%,#fff6dc 100%); }
+  .balloon{
+    position:absolute; left:0; top:0; width:84px; height:102px; cursor:pointer; will-change:transform;
+    border-radius:50% 50% 50% 50% / 44% 44% 56% 56%;
+    box-shadow:inset -10px -12px 0 rgba(0,0,0,.12), inset 9px 10px 0 rgba(255,255,255,.28);
+  }
+  .balloon::before{ content:""; position:absolute; left:50%; top:100%; width:2px; height:46px; margin-left:-1px; background:rgba(58,38,117,.35); }
+  .balloon::after{ content:""; position:absolute; left:50%; top:calc(100% - 3px); margin-left:-7px; border:7px solid transparent; border-bottom-color:inherit; border-top-width:0; border-bottom-width:10px; border-bottom-color:rgba(0,0,0,.25); }
+  .balloon i{ position:absolute; left:18%; top:14%; width:22%; height:26%; border-radius:50%; background:rgba(255,255,255,.55); transform:rotate(-28deg); }
+  .balloon.pop{ transition:transform .16s ease-out, opacity .16s ease-out; opacity:0; pointer-events:none; }
+  .balloon.nope{ animation:shake .3s ease; }
+  .pop-bit{ position:absolute; width:10px; height:10px; border-radius:50%; pointer-events:none; }
+
+  /* extra number / colour levels */
+  .count-thing{ position:absolute; line-height:1; transform:translate(-50%,-50%); pointer-events:none; }
+  .color-thing{
+    position:absolute; left:50%; top:30%; transform:translate(-50%,-50%);
+    width:min(46vw,190px); height:min(46vw,190px); border-radius:50%; background:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:min(27vw,112px); line-height:1;
+    box-shadow:0 8px 0 rgba(58,38,117,.16), 0 14px 20px rgba(58,38,117,.14);
+  }
 </style>
 </head>
 <body>
@@ -1183,6 +1253,151 @@
       </svg>
       <div id="banoTimer"><i></i></div>
     </div>
+  </div>
+
+  <!-- ============ SCHOOL SCREEN: bring the teacher what she asks for ============ -->
+  <div id="escuelaScreen" class="screen mg-screen hidden">
+    <div id="topbar">
+      <button class="icon-btn" id="escuelaHomeBtn" title="Menú">🏠</button>
+      <div id="escuelaStars" class="mg-stars"></div>
+      <div id="controls">
+        <button class="icon-btn" id="escuelaRepeatBtn" title="Repetir">🔁</button>
+        <button class="icon-btn mute-btn" title="Sonido">🔊</button>
+      </div>
+    </div>
+    <div id="escuelaPrompt" class="prompt-banner">La maestra necesita...</div>
+    <div id="escuelaStage" class="mg-stage">
+      <svg id="escuelaSvg" class="mg-svg" viewBox="0 0 360 600" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <g id="es-it-lapiz"><g transform="rotate(-40)"><rect x="-22" y="-6" width="34" height="12" fill="#ffd23f"/><rect x="-22" y="-6" width="34" height="4" fill="#ffe680"/><rect x="-28" y="-6" width="7" height="12" rx="2" fill="#ff86b4"/><rect x="-22" y="-6" width="3" height="12" fill="#b9c2d0"/><path d="M12,-6 L26,0 L12,6 Z" fill="#f3d2a2"/><path d="M20,-2.6 L26,0 L20,2.6 Z" fill="#3a2675"/></g></g>
+          <g id="es-it-libro"><rect x="-20" y="-24" width="40" height="48" rx="4" fill="#1f7ef0"/><rect x="-20" y="-24" width="8" height="48" rx="3" fill="#1257b8"/><rect x="-6" y="-14" width="20" height="12" rx="2" fill="#fff"/><rect x="-12" y="20" width="32" height="4" fill="#e9eef7"/></g>
+          <g id="es-it-manzana"><path d="M0,-12 C-10,-22 -26,-12 -22,6 C-19,20 -8,26 0,21 C8,26 19,20 22,6 C26,-12 10,-22 0,-12 Z" fill="#f0393f"/><path d="M-14,-6 q-4,8 0,14" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".6"/><path d="M0,-12 q1,-9 6,-13" stroke="#8a5a2b" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M6,-20 q10,-6 15,2 q-10,5 -15,-2 Z" fill="#3ecf8e"/></g>
+          <g id="es-it-tijeras"><path d="M-4,4 L16,-24" stroke="#b9c2d0" stroke-width="6" stroke-linecap="round"/><path d="M4,4 L-16,-24" stroke="#d7dde8" stroke-width="6" stroke-linecap="round"/><circle cx="-11" cy="15" r="9" fill="none" stroke="#ff9f1c" stroke-width="6"/><circle cx="11" cy="15" r="9" fill="none" stroke="#ff9f1c" stroke-width="6"/><circle cy="0" r="2.5" fill="#5b6170"/></g>
+          <g id="es-it-crayon"><g transform="rotate(35)"><rect x="-8" y="-18" width="16" height="40" rx="3" fill="#3ecf8e"/><rect x="-8" y="-8" width="16" height="16" fill="#1f9d68"/><path d="M-6,-18 L0,-30 L6,-18 Z" fill="#3ecf8e"/></g></g>
+          <g id="es-it-mochila"><path d="M-10,-14 q10,-16 20,0" stroke="#5227c9" stroke-width="5" fill="none"/><rect x="-22" y="-16" width="44" height="42" rx="12" fill="#8b5cf6"/><rect x="-14" y="2" width="28" height="18" rx="5" fill="#a488ff"/><rect x="-14" y="8" width="28" height="3" fill="#5227c9"/><rect x="-4" y="-8" width="8" height="6" rx="2" fill="#ffd23f"/></g>
+          <g id="es-it-regla"><g transform="rotate(-25)"><rect x="-27" y="-8" width="54" height="16" rx="3" fill="#ffb938"/><g stroke="#a35a00" stroke-width="2"><line x1="-20" y1="-8" x2="-20" y2="-1"/><line x1="-12" y1="-8" x2="-12" y2="-3"/><line x1="-4" y1="-8" x2="-4" y2="-1"/><line x1="4" y1="-8" x2="4" y2="-3"/><line x1="12" y1="-8" x2="12" y2="-1"/><line x1="20" y1="-8" x2="20" y2="-3"/></g></g></g>
+          <g id="es-it-pegamento"><rect x="-13" y="-8" width="26" height="34" rx="7" fill="#fff" stroke="#cfd9e6" stroke-width="2"/><rect x="-13" y="2" width="26" height="12" fill="#4db8ff"/><path d="M-7,-8 L-4,-20 L4,-20 L7,-8 Z" fill="#ff9f1c"/><rect x="-3" y="-27" width="6" height="8" rx="2" fill="#ff7a1a"/></g>
+        </defs>
+        <g pointer-events="none">
+          <rect x="-200" y="-200" width="760" height="540" fill="#fff1d6"/>
+          <rect x="-200" y="330" width="760" height="500" fill="#e9c48f"/><rect x="-200" y="330" width="760" height="8" fill="#c89657"/>
+          <!-- chalkboard -->
+          <rect x="22" y="24" width="206" height="124" rx="10" fill="#b87533"/><rect x="30" y="32" width="190" height="108" rx="5" fill="#2f7d5b"/>
+          <text x="52" y="78" font-size="30" fill="#fff" opacity=".9">A B C</text><text x="70" y="122" font-size="30" fill="#ffe680" opacity=".9">1 2 3</text>
+          <rect x="150" y="140" width="34" height="6" rx="3" fill="#fff"/>
+          <!-- window -->
+          <rect x="250" y="26" width="92" height="84" rx="10" fill="#b87533"/><rect x="257" y="33" width="78" height="70" rx="5" fill="#a5dcff"/><line x1="296" y1="33" x2="296" y2="103" stroke="#b87533" stroke-width="5"/><line x1="257" y1="68" x2="335" y2="68" stroke="#b87533" stroke-width="5"/><circle cx="318" cy="50" r="9" fill="#ffd23f"/>
+          <!-- table with the supplies -->
+          <rect x="14" y="398" width="332" height="196" rx="26" fill="#a9682c"/><rect x="14" y="390" width="332" height="196" rx="26" fill="#d99c58"/><rect x="26" y="400" width="308" height="6" rx="3" fill="#fff" opacity=".25"/>
+        </g>
+        <!-- teacher (original character) -->
+        <g id="esTeacher" transform="translate(296,322)" pointer-events="none">
+          <ellipse cx="0" cy="0" rx="34" ry="7" fill="#7a5a22" opacity=".25"/>
+          <rect x="-15" y="-36" width="10" height="34" rx="5" fill="#f1c9a5"/><rect x="5" y="-36" width="10" height="34" rx="5" fill="#f1c9a5"/>
+          <ellipse cx="-11" cy="-2" rx="10" ry="5" fill="#3a2675"/><ellipse cx="11" cy="-2" rx="10" ry="5" fill="#3a2675"/>
+          <path d="M-20,-116 C-24,-80 -36,-52 -38,-30 L38,-30 C36,-52 24,-80 20,-116 Z" fill="#19a7c4"/><path d="M-38,-30 L38,-30 L36,-40 L-36,-40 Z" fill="#0f7791"/>
+          <path d="M-20,-112 C-10,-104 10,-104 20,-112 L20,-118 L-20,-118 Z" fill="#fff"/>
+          <path id="esArm" d="M-18,-106 C-34,-96 -40,-84 -42,-68" stroke="#f1c9a5" stroke-width="11" fill="none" stroke-linecap="round"/>
+          <path d="M18,-106 C30,-96 30,-78 26,-64" stroke="#f1c9a5" stroke-width="11" fill="none" stroke-linecap="round"/>
+          <rect x="-6" y="-128" width="12" height="14" fill="#f1c9a5"/>
+          <circle cx="0" cy="-172" r="13" fill="#6b3f1d"/>
+          <circle cx="0" cy="-146" r="26" fill="#f6d3b3"/>
+          <path d="M-26,-146 C-28,-178 28,-178 26,-146 C18,-162 -6,-166 -26,-146 Z" fill="#6b3f1d"/>
+          <circle cx="-10" cy="-144" r="7.5" fill="#fff" fill-opacity=".5" stroke="#3a2675" stroke-width="2.2"/><circle cx="10" cy="-144" r="7.5" fill="#fff" fill-opacity=".5" stroke="#3a2675" stroke-width="2.2"/><line x1="-2.5" y1="-144" x2="2.5" y2="-144" stroke="#3a2675" stroke-width="2.2"/>
+          <circle cx="-10" cy="-144" r="2.4" fill="#3a2675"/><circle cx="10" cy="-144" r="2.4" fill="#3a2675"/>
+          <path d="M-9,-132 Q0,-124 9,-132" stroke="#c0453f" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="-17" cy="-135" r="4" fill="#ff9aa8" opacity=".6"/><circle cx="17" cy="-135" r="4" fill="#ff9aa8" opacity=".6"/>
+        </g>
+        <!-- what she is asking for -->
+        <g id="esBubble" pointer-events="none" opacity="0">
+          <path d="M228,196 L250,186 L232,176 Z" fill="#fff" stroke="#ffd23f" stroke-width="3" stroke-linejoin="round"/>
+          <rect x="150" y="150" width="84" height="76" rx="24" fill="#fff" stroke="#ffd23f" stroke-width="3"/>
+          <path d="M229,193 L240,186 L229,180 Z" fill="#fff"/>
+          <g class="es-bubble-in"><use id="esAskIcon" href="#es-it-lapiz" transform="translate(192,188) scale(1.2)"/></g>
+        </g>
+        <g id="esItems"></g>
+        <g id="esEmi"><ellipse cx="0" cy="0" rx="26" ry="6" fill="#7a5a22" opacity=".25"/><g class="pk-bob"><svg class="pk-doll" x="-42" y="-118" width="84" height="126" viewBox="0 0 400 600"></svg></g></g>
+        <g id="esCarry" pointer-events="none"></g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ============ POOL SCREEN: jump in, then tap again and again to swim ============ -->
+  <div id="albercaScreen" class="screen mg-screen hidden">
+    <div id="topbar">
+      <button class="icon-btn" id="albercaHomeBtn" title="Menú">🏠</button>
+      <div id="albercaStars" class="mg-stars"></div>
+      <button class="icon-btn mute-btn" title="Sonido">🔊</button>
+    </div>
+    <div id="albercaPrompt" class="prompt-banner">¡A nadar!</div>
+    <div id="albercaStage" class="mg-stage">
+      <svg id="albercaSvg" class="mg-svg" viewBox="0 0 360 600" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="alWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5cc8f7"/><stop offset="1" stop-color="#1b86d6"/></linearGradient>
+          <pattern id="alTiles" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="none"/><path d="M0,0 H40 M0,0 V40" stroke="#fff" stroke-width="2" opacity=".18"/></pattern>
+        </defs>
+        <g pointer-events="none">
+          <rect x="-200" y="-200" width="760" height="460" fill="#cdeeff"/>
+          <circle cx="60" cy="56" r="26" fill="#ffd23f"/><circle cx="60" cy="56" r="36" fill="#ffd23f" opacity=".3"/>
+          <g fill="#fff"><ellipse cx="230" cy="60" rx="40" ry="14"/><circle cx="214" cy="52" r="15"/><circle cx="238" cy="46" r="19"/></g>
+          <path d="M-20,214 q30,-34 60,-8 q24,-30 58,-4 q30,-34 62,-2 q26,-28 58,0 q30,-30 60,-2 q26,-24 56,2 q20,-16 46,6 L380,250 L-20,250 Z" fill="#5fcf7b"/>
+          <rect x="-200" y="228" width="760" height="40" fill="#f6e3c0"/><rect x="-200" y="228" width="760" height="5" fill="#fff" opacity=".5"/>
+          <rect x="-200" y="262" width="760" height="560" fill="url(#alWater)"/><rect x="-200" y="262" width="760" height="560" fill="url(#alTiles)"/>
+          <!-- lane rope -->
+          <g><line x1="-10" y1="470" x2="370" y2="470" stroke="#fff" stroke-width="3" opacity=".5"/>
+            <g fill="#f0393f"><circle cx="20" cy="470" r="7"/><circle cx="100" cy="470" r="7"/><circle cx="180" cy="470" r="7"/><circle cx="260" cy="470" r="7"/><circle cx="340" cy="470" r="7"/></g>
+            <g fill="#fff"><circle cx="60" cy="470" r="7"/><circle cx="140" cy="470" r="7"/><circle cx="220" cy="470" r="7"/><circle cx="300" cy="470" r="7"/></g></g>
+          <!-- rubber duck -->
+          <g transform="translate(250,540)"><ellipse cx="0" cy="6" rx="22" ry="13" fill="#ffd23f"/><circle cx="14" cy="-8" r="11" fill="#ffd23f"/><path d="M23,-8 l10,3 l-10,4 Z" fill="#ff9f1c"/><circle cx="17" cy="-11" r="2" fill="#3a2675"/></g>
+          <!-- pool ladders / walls -->
+          <rect x="-6" y="250" width="22" height="400" fill="#eaf6ff"/><rect x="344" y="250" width="22" height="400" fill="#eaf6ff"/>
+          <g class="al-flag" id="alFlagL" transform="translate(22,232)"><rect x="-2" y="-52" width="4" height="52" fill="#8d97a8"/><path d="M2,-52 L30,-42 L2,-32 Z" fill="#f0393f"/><g class="al-flag-star"><text x="-12" y="-58" font-size="22">⭐</text></g></g>
+          <g class="al-flag" id="alFlagR" transform="translate(338,232)"><rect x="-2" y="-52" width="4" height="52" fill="#8d97a8"/><path d="M-2,-52 L-30,-42 L-2,-32 Z" fill="#f0393f"/><g class="al-flag-star"><text x="-12" y="-58" font-size="22">⭐</text></g></g>
+        </g>
+        <g id="alEmi" pointer-events="none"><g class="pk-bob"><svg class="pk-doll" x="-42" y="-118" width="84" height="126" viewBox="0 0 400 600"></svg></g></g>
+        <!-- water drawn over Emi so he looks half under it -->
+        <g pointer-events="none">
+          <rect x="-200" y="270" width="760" height="560" fill="#3fb4f0" opacity=".5"/>
+          <path id="alWave" d="M-80,270 q15,-9 30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 V282 H-80 Z" fill="#dff4ff" opacity=".9"/>
+          <g id="alSplash"></g>
+          <text id="alHand" x="180" y="420" text-anchor="middle">👆</text>
+        </g>
+        <rect id="alTap" x="-200" y="-200" width="760" height="1000" fill="transparent"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ============ SHAPES SCREEN: drag each shape into its hole ============ -->
+  <div id="figurasScreen" class="screen mg-screen hidden">
+    <div id="topbar">
+      <button class="icon-btn" id="figurasHomeBtn" title="Menú">🏠</button>
+      <div id="figurasStars" class="mg-stars"></div>
+      <button class="icon-btn mute-btn" title="Sonido">🔊</button>
+    </div>
+    <div id="figurasPrompt" class="prompt-banner">Pon cada figura en su lugar</div>
+    <div id="figurasStage" class="mg-stage">
+      <svg id="figurasSvg" class="mg-svg" viewBox="0 0 360 600" preserveAspectRatio="xMidYMid meet">
+        <g pointer-events="none">
+          <rect x="-200" y="-200" width="760" height="1000" fill="#ffe9c2"/>
+          <rect x="14" y="26" width="332" height="282" rx="28" fill="#a9682c"/><rect x="14" y="18" width="332" height="282" rx="28" fill="#d99c58"/>
+          <rect x="28" y="30" width="304" height="6" rx="3" fill="#fff" opacity=".25"/>
+          <rect x="14" y="346" width="332" height="240" rx="28" fill="#fff" opacity=".55"/>
+        </g>
+        <g id="fgHoles" pointer-events="none"></g>
+        <g id="fgPieces"></g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ============ BALLOONS SCREEN: pop the balloons (then only the colour asked for) ============ -->
+  <div id="globosScreen" class="screen mg-screen hidden">
+    <div id="topbar">
+      <button class="icon-btn" id="globosHomeBtn" title="Menú">🏠</button>
+      <div id="globosProgress">0 / 6</div>
+      <button class="icon-btn mute-btn" title="Sonido">🔊</button>
+    </div>
+    <div id="globosPrompt" class="prompt-banner">¡Revienta los globos!</div>
+    <div id="globosStage" class="mg-stage"></div>
   </div>
 
   <div id="confetti-layer"></div>
@@ -2017,7 +2232,9 @@
      document.getElementById("vehiclesScreen"), document.getElementById("numbersScreen"),
      document.getElementById("colorsScreen"), document.getElementById("memoramaScreen"),
      document.getElementById("namephotoScreen"), document.getElementById("abecedarioScreen"),
-     document.getElementById("parkScreen"), document.getElementById("banoScreen")]
+     document.getElementById("parkScreen"), document.getElementById("banoScreen"),
+     document.getElementById("escuelaScreen"), document.getElementById("albercaScreen"),
+     document.getElementById("figurasScreen"), document.getElementById("globosScreen")]
       .forEach(s => s.classList.add("hidden"));
     menuScreen.classList.remove("hidden");
     settleMenuTrack(); // re-measure now that the carousel is actually visible/laid out
@@ -2736,7 +2953,7 @@
       const p2 = pickPraise(NUMERO_PRAISE);
       speakThen(p2.text, p2.key, 1000, () => {
         numbersOrderLevelIndex++;
-        if(numbersOrderLevelIndex >= NUMBERS_ORDER_LEVELS.length) finishNumbers();
+        if(numbersOrderLevelIndex >= NUMBERS_ORDER_LEVELS.length) startNumbersCountPhase();
         else askNumbersOrderLevel();
       });
     }
@@ -2752,6 +2969,75 @@
     speakThen("Inténtalo de nuevo", "retry", 900, () => {
       numbersOrderLocked = false;
       speak(numbersOrderLevelText(lvl), lvl.key);
+    });
+  }
+
+  /* ---- Numbers, phase 3: count the things and tap how many there are ----
+     Voice keys: numero_contar (the question) and numero_son_<n> for n = 1..10. */
+  const NUMBERS_COUNT_LEVELS = [[1,3],[2,4],[3,5],[4,7],[5,8],[6,10]];
+  const NUMBERS_COUNT_THINGS = ["🍎","⭐","🐟","🎈","🚗","🐥"];
+  let numbersCountIndex = 0, numbersCountLocked = false, numbersCountLast = 0;
+  function startNumbersCountPhase(){ numbersCountIndex = 0; buildNumbersCount(); }
+  function buildNumbersCount(){
+    if(numbersScreen.classList.contains("hidden")) return;       // left with the home button
+    const range = NUMBERS_COUNT_LEVELS[numbersCountIndex];
+    let n;
+    do { n = range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1)); } while(n === numbersCountLast);
+    numbersCountLast = n;
+    numbersCountLocked = false;
+    numbersProgress.textContent = "Cuenta " + (numbersCountIndex+1) + " / " + NUMBERS_COUNT_LEVELS.length;
+    numbersPrompt.textContent = "🔢 ¿Cuántos hay?";
+    speak("¿Cuántos hay? Cuenta y toca el número", "numero_contar");
+    numbersStage.innerHTML = "";
+    const rect = numbersStage.getBoundingClientRect();
+    const w = rect.width || 320, h = rect.height || 480;
+    const thing = NUMBERS_COUNT_THINGS[numbersCountIndex % NUMBERS_COUNT_THINGS.length];
+    const cols = n <= 3 ? n : n <= 6 ? 3 : n <= 8 ? 4 : 5, rows = Math.ceil(n / cols);
+    const areaH = h * .6, cell = Math.min((w - 24) / cols, (areaH - 16) / rows, 120);
+    for(let i = 0; i < n; i++){
+      const r = Math.floor(i / cols), inRow = (r === rows - 1) ? n - r * cols : cols, c = i - r * cols;
+      const s = document.createElement("span");
+      s.className = "count-thing"; s.textContent = thing;
+      s.style.fontSize = Math.round(cell * .68) + "px";
+      s.style.left = (w / 2 + (c - (inRow - 1) / 2) * cell) + "px";
+      s.style.top = (areaH / 2 + 8 + (r - (rows - 1) / 2) * cell) + "px";
+      numbersStage.appendChild(s);
+    }
+    const opts = [n];
+    [n + 1, n - 1, n + 2, n - 2].sort(() => Math.random() - .5).forEach(v => { if(opts.length < 3 && v >= 1 && v <= 10) opts.push(v); });
+    const usedColors = COLORS.slice().sort(() => Math.random() - .5);
+    const size = Math.min(100, w * .26);
+    opts.sort(() => Math.random() - .5).forEach((val, i) => {
+      const btn = document.createElement("button");
+      btn.className = "number-bubble";
+      btn.textContent = val;
+      btn.style.width = size + "px"; btn.style.height = size + "px";
+      btn.style.marginLeft = (-size/2) + "px"; btn.style.marginTop = (-size/2) + "px";
+      btn.style.fontSize = Math.round(size * .46) + "px";
+      btn.style.left = (w * (.2 + .3 * i)) + "px"; btn.style.top = (h * .82) + "px";
+      const col = usedColors[i % usedColors.length];
+      btn.style.background = `linear-gradient(150deg, ${shadeHex(col,0.28)}, ${col} 55%, ${shadeHex(col,-0.14)})`;
+      btn.addEventListener("pointerdown", () => {
+        if(numbersCountLocked) return;
+        if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+        numbersCountLocked = true;
+        if(val === n){
+          btn.classList.add("lit");
+          playCorrect(); burstConfetti(36); playApplause();
+          numbersPrompt.textContent = "🎉 ¡Sí! " + (n === 1 ? "Es" : "Son") + " " + n;
+          speakThen("¡Sí! " + (n === 1 ? "Es uno" : "Son " + NUMERO_WORDS[n]), "numero_son_" + n, 1300, () => {
+            if(numbersScreen.classList.contains("hidden")) return;
+            numbersCountIndex++;
+            if(numbersCountIndex >= NUMBERS_COUNT_LEVELS.length) finishNumbers(); else buildNumbersCount();
+          });
+        } else {
+          playWrong();
+          btn.classList.add("wrong");
+          setTimeout(() => btn.classList.remove("wrong"), 350);
+          speakThen("Inténtalo de nuevo", "retry", 900, () => { numbersCountLocked = false; });
+        }
+      });
+      numbersStage.appendChild(btn);
     });
   }
 
@@ -2911,7 +3197,7 @@
         const p = pickPraise(COLORES_PRAISE);
         speakThen(p.text, p.key, 1200, () => {
           colorsLevelIndex++;
-          if(colorsLevelIndex >= COLORS_ROUNDS_TOTAL) finishColors();
+          if(colorsLevelIndex >= COLORS_ROUNDS_TOTAL) startColorsObjectPhase();
           else buildColorsLevel();
         });
       }
@@ -2932,6 +3218,72 @@
     colorsScreen.classList.remove("hidden");
     speakThen("Mira bien el orden de los colores y luego tócalos igual", "colores_intro", 1600, buildColorsLevel);
   }
+  /* ---- Colors, phase 2: "what colour is it?" — look at the thing and tap its colour ----
+     Voice keys: colores_objeto_<id> (the question). The answer reuses colores_<color>. */
+  const COLOR_OBJECTS = [
+    { id:"manzana", emoji:"🍎", ask:"¿De qué color es la manzana?", color:"rojo" },
+    { id:"platano", emoji:"🍌", ask:"¿De qué color es el plátano?", color:"amarillo" },
+    { id:"rana",    emoji:"🐸", ask:"¿De qué color es la rana?",    color:"verde" },
+    { id:"ballena", emoji:"🐳", ask:"¿De qué color es la ballena?", color:"azul" },
+    { id:"naranja", emoji:"🍊", ask:"¿De qué color es la naranja?", color:"naranja" },
+    { id:"uvas",    emoji:"🍇", ask:"¿De qué color son las uvas?",  color:"morado" },
+    { id:"cerdito", emoji:"🐷", ask:"¿De qué color es el cerdito?", color:"rosa" },
+    { id:"oso",     emoji:"🐻", ask:"¿De qué color es el oso?",     color:"cafe" }
+  ];
+  const COLOR_OBJECT_LEVELS = 6;
+  let colorsObjectIndex = 0, colorsObjectOrder = [], colorsObjectLocked = false;
+  function startColorsObjectPhase(){
+    colorsObjectIndex = 0;
+    colorsObjectOrder = shuffledIndices(COLOR_OBJECTS.length).slice(0, COLOR_OBJECT_LEVELS).map(i => COLOR_OBJECTS[i]);
+    buildColorsObject();
+  }
+  function buildColorsObject(){
+    if(colorsScreen.classList.contains("hidden")) return;        // left with the home button
+    const obj = colorsObjectOrder[colorsObjectIndex];
+    colorsObjectLocked = false;
+    colorsProgress.textContent = "Color " + (colorsObjectIndex+1) + " / " + COLOR_OBJECT_LEVELS;
+    colorsPrompt.textContent = "🎨 " + obj.ask;
+    speak(obj.ask, "colores_objeto_" + obj.id);
+    colorsStage.innerHTML = "";
+    colorsBoxEls = {};
+    const thing = document.createElement("div");
+    thing.className = "color-thing"; thing.textContent = obj.emoji;
+    colorsStage.appendChild(thing);
+    const rect = colorsStage.getBoundingClientRect();
+    const w = rect.width || 320, h = rect.height || 480;
+    const pool = COLOR_OBJECTS.map(o => o.color).filter(c => c !== obj.color).sort(() => Math.random() - .5).slice(0, 2).concat([obj.color]).sort(() => Math.random() - .5);
+    const size = Math.min(104, w * .26);
+    pool.forEach((colorId, i) => {
+      const def = COLOR_DEFS_ALL.find(d => d.id === colorId);
+      const box = document.createElement("button");
+      box.className = "color-box";
+      box.style.background = `linear-gradient(150deg, ${shadeHex(def.css,0.28)}, ${def.css} 55%, ${shadeHex(def.css,-0.14)})`;
+      box.style.position = "absolute"; box.style.opacity = "1";
+      box.style.width = size + "px"; box.style.height = size + "px";
+      box.style.left = (w * (.2 + .3 * i) - size/2) + "px"; box.style.top = (h * .76 - size/2) + "px";
+      box.addEventListener("pointerdown", () => {
+        if(colorsObjectLocked) return;
+        if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+        colorsObjectLocked = true;
+        if(colorId === obj.color){
+          box.classList.add("lit");
+          playCorrect(); burstConfetti(36); playApplause();
+          speakThen(colorId === "cafe" ? "café" : colorId, "colores_" + colorId, 1200, () => {
+            if(colorsScreen.classList.contains("hidden")) return;
+            colorsObjectIndex++;
+            if(colorsObjectIndex >= COLOR_OBJECT_LEVELS) finishColors(); else buildColorsObject();
+          });
+        } else {
+          playWrong();
+          box.classList.add("wrong");
+          setTimeout(() => box.classList.remove("wrong"), 350);
+          speakThen("Inténtalo de nuevo", "retry", 900, () => { colorsObjectLocked = false; });
+        }
+      });
+      colorsStage.appendChild(box);
+    });
+  }
+
   function finishColors(){
     bigCelebration();
     speakThen("¡Excelente memoria, Emi! Ya completaste el juego de colores", "colores_finish", 1800, showMenu);
@@ -4108,6 +4460,535 @@
   document.getElementById("banoHomeBtn").addEventListener("click", () => { banoToken++; banoState = "idle"; showMenu(); });
   document.getElementById("banoMuteBtn").addEventListener("click", () => toggleMute());
 
+  /* ================= SHARED HELPERS for the scene minigames ================= */
+  function mgSvgPoint(svg, e){
+    const m = svg.getScreenCTM();
+    return m ? { x:(e.clientX - m.e) / m.a, y:(e.clientY - m.f) / m.d } : { x:0, y:0 };
+  }
+  // One per game. reset() cancels every pending animation/timer/voice callback of that game,
+  // so leaving with the home button can never fire something later on another screen.
+  function mgRunner(){
+    let tok = 0;
+    return {
+      reset(){ tok++; },
+      alive(t){ return t === tok; },
+      get token(){ return tok; },
+      seq(steps, done){     // [durationMs, fn(progress 0..1)] one after another
+        const t = tok; let i = 0, t0 = null;
+        function frame(now){
+          if(t !== tok) return;
+          if(t0 === null) t0 = now;
+          const step = steps[i], u = Math.min(1, (now - t0) / step[0]);
+          step[1](u);
+          if(u >= 1){ i++; t0 = null; if(i >= steps.length){ if(done) done(); return; } }
+          requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      },
+      later(ms, fn){ const t = tok; setTimeout(() => { if(t === tok) fn(); }, ms); },
+      wrap(fn){ const t = tok; return function(){ if(t === tok) fn.apply(null, arguments); }; }
+    };
+  }
+  const mgEase = u => u < .5 ? 2*u*u : 1 - Math.pow(-2*u + 2, 2) / 2;
+  function mgStars(el, total, on){
+    el.innerHTML = "";
+    for(let i = 0; i < total; i++){
+      const s = document.createElement("span");
+      s.className = "star" + (i < on ? " on" : ""); s.textContent = "⭐";
+      el.appendChild(s);
+    }
+  }
+  // A draggable/animatable Emi: returns {set(x,y,rot,scale), hop(x,y,ms,scale), pos, face(mood)}
+  function mgDoll(g){
+    g.querySelector(".pk-doll").innerHTML = characterSVG();
+    const d = { pos:{ x:0, y:0 } };
+    d.set = (x, y, rot, scale) => {
+      d.pos = { x:x, y:y };
+      g.setAttribute("transform", "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ") rotate(" + (rot||0).toFixed(1) + ") scale(" + (scale==null?1:scale).toFixed(3) + ")");
+    };
+    d.hop = (x, y, ms, scale, onFrame) => {
+      let from = null;
+      return [ms, u => {
+        if(!from) from = { x:d.pos.x, y:d.pos.y };
+        const e = mgEase(u);
+        d.set(from.x + (x - from.x) * e, from.y + (y - from.y) * e - 24 * Math.sin(Math.PI * u), 0, scale == null ? 1 : scale);
+        if(onFrame) onFrame(u);
+      }];
+    };
+    d.face = mood => {
+      const head = g.querySelector(".head-rig");
+      if(head){ head.classList.toggle("happy", mood === "happy"); head.classList.toggle("sad", mood === "sad"); }
+      g.querySelectorAll(".limb-l, .limb-r").forEach(l => l.classList.toggle("clap", mood === "happy"));
+    };
+    return d;
+  }
+  const SVGNS = "http://www.w3.org/2000/svg";
+
+  /* ================= SCHOOL MINIGAME: bring the teacher what she asks for =================
+     The teacher shows a picture of what she needs and asks for it out loud. Tap that
+     thing on the table and Emi carries it to her.
+     Voice keys: escuela_intro, escuela_ask_<id>, escuela_gracias, escuela_finish. */
+  const escuelaScreen = document.getElementById("escuelaScreen");
+  const escuelaSvg = document.getElementById("escuelaSvg");
+  const escuelaPrompt = document.getElementById("escuelaPrompt");
+  const esItemsLayer = document.getElementById("esItems");
+  const esCarry = document.getElementById("esCarry");
+  const esBubble = document.getElementById("esBubble");
+  const esTeacher = document.getElementById("esTeacher");
+  const esRun = mgRunner();
+  const esEmi = mgDoll(document.getElementById("esEmi"));
+  const ES_ITEMS = [
+    { id:"lapiz",     name:"el lápiz" },   { id:"libro",   name:"el libro" },
+    { id:"manzana",   name:"la manzana" }, { id:"tijeras", name:"las tijeras" },
+    { id:"crayon",    name:"el crayón" },  { id:"mochila", name:"la mochila" },
+    { id:"regla",     name:"la regla" },   { id:"pegamento", name:"el pegamento" }
+  ];
+  const ES_SHOWN = [3, 3, 4, 4, 6, 6];              // how many things are on the table each round
+  const ES_SPOTS = [[76,452],[180,452],[284,452],[76,534],[180,534],[284,534]];
+  const ES_HOME = [92, 348];
+  let esRound = 0, esTarget = null, esLocked = true, esAsked = [];
+
+  function esAskText(){ return "Emi, tráeme " + esTarget.name; }
+  function esBuildRound(){
+    esLocked = true;
+    esItemsLayer.innerHTML = ""; esCarry.innerHTML = "";
+    const n = ES_SHOWN[esRound];
+    // target: something not asked for yet; the rest are random other things
+    const fresh = ES_ITEMS.filter(it => esAsked.indexOf(it.id) < 0);
+    esTarget = fresh[Math.floor(Math.random() * fresh.length)];
+    esAsked.push(esTarget.id);
+    const others = shuffledIndices(ES_ITEMS.length).map(i => ES_ITEMS[i]).filter(it => it.id !== esTarget.id).slice(0, n - 1);
+    const shown = others.concat([esTarget]);
+    const order = shuffledIndices(shown.length);
+    const spots = n <= 3 ? [ES_SPOTS[0], ES_SPOTS[1], ES_SPOTS[2]] : n === 4 ? [ES_SPOTS[0], ES_SPOTS[2], ES_SPOTS[3], ES_SPOTS[5]] : ES_SPOTS;
+    order.forEach((idx, k) => {
+      const it = shown[idx], sp = spots[k];
+      const g = document.createElementNS(SVGNS, "g");
+      g.setAttribute("class", "es-item"); g.dataset.id = it.id;
+      g.innerHTML = '<g transform="translate(' + sp[0] + ',' + sp[1] + ')"><circle class="es-plate" r="38"/><use href="#es-it-' + it.id + '" transform="scale(1.15)"/></g>';
+      g.addEventListener("pointerdown", e => {
+        if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+        esTap(it, g, sp); e.preventDefault();
+      });
+      esItemsLayer.appendChild(g);
+    });
+    document.getElementById("esAskIcon").setAttribute("href", "#es-it-" + esTarget.id);
+    esBubble.setAttribute("opacity", 1);
+    escuelaPrompt.textContent = "👩‍🏫 Tráeme " + esTarget.name;
+    esLocked = false;
+    speak(esAskText(), "escuela_ask_" + esTarget.id);
+  }
+  function esTap(it, g, sp){
+    if(esLocked) return;
+    if(it.id !== esTarget.id){
+      esLocked = true;
+      playWrong();
+      g.classList.add("wrong");
+      setTimeout(() => g.classList.remove("wrong"), 350);
+      speakThen("Inténtalo de nuevo", "retry", 900, esRun.wrap(() => { esLocked = false; speak(esAskText(), "escuela_ask_" + esTarget.id); }));
+      return;
+    }
+    esLocked = true;
+    playCorrect();
+    document.getElementById("esEmi").classList.add("mg-busy");
+    const inner = g.firstElementChild;
+    const carry = () => inner.setAttribute("transform", "translate(" + (esEmi.pos.x + 24).toFixed(1) + "," + (esEmi.pos.y - 58).toFixed(1) + ") scale(.8)");
+    esRun.seq([
+      esEmi.hop(Math.max(44, sp[0] - 36), sp[1] + 30, 420, 1),
+      [120, u => { if(u === 0){ g.classList.add("carried"); esCarry.appendChild(g); tone(660, 0, .1, "triangle", .12); } carry(); }],
+      esEmi.hop(232, 330, 620, 1, carry),
+      [260, u => inner.setAttribute("transform", "translate(" + (256 + (254 - 256) * u).toFixed(1) + "," + (272 - 18 * u).toFixed(1) + ") scale(.8)")]
+    ], () => {
+      esBubble.setAttribute("opacity", 0);
+      esRound++;
+      mgStars(document.getElementById("escuelaStars"), ES_SHOWN.length, esRound);
+      burstConfetti(40); playApplause();
+      esEmi.face("happy");
+      escuelaPrompt.textContent = "💛 ¡Gracias, Emi!";
+      esRun.seq([[700, u => esTeacher.setAttribute("transform", "translate(296," + (322 - 12 * Math.abs(Math.sin(u * Math.PI * 2))).toFixed(1) + ")")]]);
+      speakThen("¡Gracias, Emi!", "escuela_gracias", 1500, esRun.wrap(() => {
+        esEmi.face("");
+        esCarry.innerHTML = "";
+        esRun.seq([ esEmi.hop(ES_HOME[0], ES_HOME[1], 520, 1) ], () => {
+          document.getElementById("esEmi").classList.remove("mg-busy");
+          if(esRound >= ES_SHOWN.length) finishEscuela(); else esBuildRound();
+        });
+      }));
+    });
+  }
+  function startEscuelaGame(){
+    esRun.reset();
+    esRound = 0; esAsked = []; esLocked = true;
+    mgStars(document.getElementById("escuelaStars"), ES_SHOWN.length, 0);
+    esItemsLayer.innerHTML = ""; esCarry.innerHTML = "";
+    esBubble.setAttribute("opacity", 0);
+    esTeacher.setAttribute("transform", "translate(296,322)");
+    esEmi.face(""); esEmi.set(ES_HOME[0], ES_HOME[1], 0, 1);
+    document.getElementById("esEmi").classList.remove("mg-busy");
+    escuelaPrompt.textContent = "🏫 ¡Vamos a la escuela!";
+    menuScreen.classList.add("hidden");
+    escuelaScreen.classList.remove("hidden");
+    speakThen("La maestra necesita ayuda. Llévale lo que te pida", "escuela_intro", 1200, esRun.wrap(esBuildRound));
+  }
+  function finishEscuela(){
+    esLocked = true;
+    escuelaPrompt.textContent = "🌟 ¡Qué buen ayudante! 🌟";
+    bigCelebration();
+    speakThen("¡Qué buen ayudante! La maestra está muy contenta", "escuela_finish", 1800, esRun.wrap(showMenu));
+  }
+  document.getElementById("escuelaHomeBtn").addEventListener("click", () => { esRun.reset(); esLocked = true; showMenu(); });
+  document.getElementById("escuelaRepeatBtn").addEventListener("click", () => { if(!esLocked) speak(esAskText(), "escuela_ask_" + esTarget.id); });
+
+  /* ================= POOL MINIGAME: jump in, then tap again and again to swim =================
+     First tap: Emi jumps into the pool. After that every tap is one stroke towards the
+     flag on the other side; three laps, each needing a few more strokes.
+     Voice keys: alberca_intro, alberca_nada, alberca_vuelta, alberca_finish. */
+  const albercaScreen = document.getElementById("albercaScreen");
+  const albercaSvg = document.getElementById("albercaSvg");
+  const albercaPrompt = document.getElementById("albercaPrompt");
+  const alSplash = document.getElementById("alSplash");
+  const alHand = document.getElementById("alHand");
+  const alRun = mgRunner();
+  const alEmi = mgDoll(document.getElementById("alEmi"));
+  const AL_STROKES = [8, 11, 14];          // taps needed for lap 1, 2, 3
+  const AL_LEFT = 62, AL_RIGHT = 298, AL_SWIM_Y = 342, AL_DECK = [52, 232];
+  let alState = "idle";                    // "deck" | "jump" | "swim" | "wait"
+  let alLap = 0, alDir = 1, alStroke = 0, alTargetX = AL_LEFT, alLastTap = 0;
+
+  function alDrops(x, y, n, power){
+    for(let i = 0; i < n; i++){
+      const c = document.createElementNS(SVGNS, "circle");
+      c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", 3 + Math.random() * 4);
+      c.setAttribute("fill", "#eaf8ff");
+      alSplash.appendChild(c);
+      const dx = (Math.random() * 2 - 1) * power, dy = -(.4 + Math.random() * .8) * power;
+      const a = c.animate ? c.animate(
+        [{ transform:"translate(0,0)", opacity:1 }, { transform:"translate(" + dx + "px," + dy + "px)", opacity:1, offset:.6 }, { transform:"translate(" + (dx*1.3) + "px," + (dy*.2) + "px)", opacity:0 }],
+        { duration:520, easing:"ease-out" }) : null;
+      if(a) a.onfinish = () => c.remove(); else setTimeout(() => c.remove(), 520);
+    }
+  }
+  function alSetFlags(){
+    document.getElementById("alFlagR").classList.toggle("on", alState !== "deck" && alDir === 1);
+    document.getElementById("alFlagL").classList.toggle("on", alState !== "deck" && alDir === -1);
+  }
+  function alSwimLoop(){
+    const tok = alRun.token;
+    let x = alEmi.pos.x, lean = 0;
+    function frame(now){
+      if(!alRun.alive(tok) || alState !== "swim") return;
+      x += (alTargetX - x) * .12;
+      lean *= .9;
+      const sinceTap = now - alLastTap;
+      if(sinceTap < 140) lean = alDir * 13 * (alStroke % 2 ? 1 : -1);
+      alEmi.set(x, AL_SWIM_Y + 4 * Math.sin(now / 320), lean, .9);
+      alHand.classList.toggle("show", sinceTap > 2200);
+      if(alStroke >= AL_STROKES[alLap] && Math.abs(alTargetX - x) < 2){ alLapDone(); return; }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  function alStartLap(){
+    alStroke = 0;
+    alState = "swim";
+    alLastTap = performance.now() - 2000;       // show the tapping hand almost right away
+    alSetFlags();
+    albercaPrompt.textContent = "👆 ¡Toca muchas veces para nadar!";
+    alSwimLoop();
+  }
+  function alLapDone(){
+    alState = "wait";
+    alHand.classList.remove("show");
+    alLap++;
+    mgStars(document.getElementById("albercaStars"), AL_STROKES.length, alLap);
+    playCorrect(); burstConfetti(36);
+    alDrops(alEmi.pos.x, 272, 10, 46);
+    if(alLap >= AL_STROKES.length){
+      albercaPrompt.textContent = "🏅 ¡Llegaste, Emi!";
+      playApplause(true);
+      document.getElementById("alFlagL").classList.remove("on"); document.getElementById("alFlagR").classList.remove("on");
+      alRun.seq([ alEmi.hop(alDir === 1 ? 308 : AL_DECK[0], AL_DECK[1], 600, 1) ], () => { alEmi.face("happy"); finishAlberca(); });
+      return;
+    }
+    albercaPrompt.textContent = "⭐ ¡Muy bien! Ahora de regreso";
+    alDir = -alDir;
+    alTargetX = alEmi.pos.x;
+    speakThen("¡Muy bien! Ahora nada de regreso", "alberca_vuelta", 1300, alRun.wrap(alStartLap));
+  }
+  document.getElementById("alTap").addEventListener("pointerdown", e => {
+    e.preventDefault();
+    if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    if(alState === "deck"){
+      alState = "jump";
+      alHand.classList.remove("show");
+      tone(330, 0, .12, "sine", .12); tone(520, .1, .16, "sine", .12);
+      alRun.seq([
+        [520, u => { const e = mgEase(u); alEmi.set(AL_DECK[0] + (AL_LEFT - AL_DECK[0]) * e, AL_DECK[1] + (AL_SWIM_Y - AL_DECK[1]) * e - 70 * Math.sin(Math.PI * u), 0, 1 - .1 * u); }]
+      ], () => {
+        alDrops(AL_LEFT, 272, 16, 70);
+        [0, .05, .1].forEach((d, i) => tone(240 - i*40, d, .2, "triangle", .1));
+        alTargetX = AL_LEFT;
+        speak("¡Toca muchas veces para nadar!", "alberca_nada");
+        alStartLap();
+      });
+    } else if(alState === "swim" && alStroke < AL_STROKES[alLap]){
+      alStroke++;
+      alLastTap = performance.now();
+      alTargetX = (alDir === 1 ? AL_LEFT : AL_RIGHT) + alDir * (AL_RIGHT - AL_LEFT) * alStroke / AL_STROKES[alLap];
+      alDrops(alEmi.pos.x - alDir * 14, 274, 5, 30);
+      tone(480 + Math.random() * 160, 0, .09, "sine", .09);
+    }
+  });
+  function startAlbercaGame(){
+    alRun.reset();
+    alLap = 0; alDir = 1; alStroke = 0; alState = "wait";
+    mgStars(document.getElementById("albercaStars"), AL_STROKES.length, 0);
+    alSplash.innerHTML = "";
+    alEmi.face(""); alEmi.set(AL_DECK[0], AL_DECK[1], 0, 1);
+    alSetFlags();
+    albercaPrompt.textContent = "👉 Toca para entrar a la alberca";
+    menuScreen.classList.add("hidden");
+    albercaScreen.classList.remove("hidden");
+    alState = "deck";
+    alHand.classList.add("show");
+    speak("Toca a Emi para que entre a la alberca", "alberca_intro");
+  }
+  function finishAlberca(){
+    bigCelebration();
+    speakThen("¡Qué buen nadador eres, Emi!", "alberca_finish", 1800, alRun.wrap(showMenu));
+  }
+  document.getElementById("albercaHomeBtn").addEventListener("click", () => { alRun.reset(); alState = "idle"; showMenu(); });
+
+  /* ================= SHAPES MINIGAME: drag each shape into its hole =================
+     Voice keys: figuras_intro, figura_<id> (said when a shape fits), figuras_finish.
+     The praise between levels reuses numero_praise. */
+  const figurasScreen = document.getElementById("figurasScreen");
+  const figurasSvg = document.getElementById("figurasSvg");
+  const figurasPrompt = document.getElementById("figurasPrompt");
+  const fgHoles = document.getElementById("fgHoles");
+  const fgPieces = document.getElementById("fgPieces");
+  const fgRun = mgRunner();
+  const FG_SHAPES = [
+    { id:"circulo",    name:"Círculo",    color:"#f0393f", svg:'<circle r="38"/>' },
+    { id:"cuadrado",   name:"Cuadrado",   color:"#2f9bff", svg:'<rect x="-34" y="-34" width="68" height="68" rx="7"/>' },
+    { id:"triangulo",  name:"Triángulo",  color:"#3ecf8e", svg:'<path d="M0,-40 L42,32 L-42,32 Z" stroke-linejoin="round"/>' },
+    { id:"estrella",   name:"Estrella",   color:"#ffc533", svg:'<path d="M0,-42 L11,-14 L41,-13 L17,6 L26,35 L0,18 L-26,35 L-17,6 L-41,-13 L-11,-14 Z" stroke-linejoin="round"/>' },
+    { id:"corazon",    name:"Corazón",    color:"#ff5d9e", svg:'<path d="M0,36 C-46,6 -44,-34 -20,-34 C-8,-34 0,-24 0,-16 C0,-24 8,-34 20,-34 C44,-34 46,6 0,36 Z" stroke-linejoin="round"/>' },
+    { id:"rectangulo", name:"Rectángulo", color:"#8b5cf6", svg:'<rect x="-44" y="-25" width="88" height="50" rx="7"/>' }
+  ];
+  const FG_LEVELS = [3, 4, 6];
+  const FG_HOLE_SPOTS = [[76,98],[180,98],[284,98],[76,222],[180,222],[284,222]];
+  const FG_HOME_SPOTS = [[76,410],[180,410],[284,410],[76,522],[180,522],[284,522]];
+  let fgLevel = 0, fgLeft = 0, fgLocked = true;
+
+  function fgSpots(all, n){ return n === 3 ? [all[0], all[1], all[2]] : n === 4 ? [all[0], all[2], all[3], all[5]] : all; }
+  function fgBuildLevel(){
+    fgLocked = false;
+    fgHoles.innerHTML = ""; fgPieces.innerHTML = "";
+    const n = FG_LEVELS[fgLevel];
+    const shapes = shuffledIndices(FG_SHAPES.length).slice(0, n).map(i => FG_SHAPES[i]);
+    const holeSpots = fgSpots(FG_HOLE_SPOTS, n), homeSpots = fgSpots(FG_HOME_SPOTS, n);
+    const homeOrder = shuffledIndices(n);
+    fgLeft = n;
+    figurasPrompt.textContent = "🧩 Pon cada figura en su lugar";
+    const holes = shapes.map((sh, i) => {
+      const h = document.createElementNS(SVGNS, "g");
+      h.setAttribute("class", "fg-hole"); h.dataset.id = sh.id;
+      h.setAttribute("transform", "translate(" + holeSpots[i][0] + "," + holeSpots[i][1] + ")");
+      h.innerHTML = '<g fill="#8a5424" stroke="#6b3d14" stroke-width="5">' + sh.svg + '</g><g fill="#7a4a1e" transform="translate(0,3) scale(.94)">' + sh.svg + '</g>';
+      fgHoles.appendChild(h);
+      return { id:sh.id, x:holeSpots[i][0], y:holeSpots[i][1], el:h };
+    });
+    shapes.forEach((sh, i) => {
+      const home = homeSpots[homeOrder[i]];
+      const p = document.createElementNS(SVGNS, "g");
+      p.setAttribute("class", "fg-piece"); p.dataset.id = sh.id;
+      p.innerHTML = '<g class="fg-in"><g fill="rgba(58,38,117,.22)" transform="translate(0,6)">' + sh.svg + '</g><g fill="' + sh.color + '" stroke="#fff" stroke-width="5">' + sh.svg + '</g><circle r="52" fill="transparent"/></g>';
+      const pos = { x:home[0], y:home[1] };
+      const put = (x, y, s) => { pos.x = x; pos.y = y; p.setAttribute("transform", "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ") scale(" + (s||1) + ")"); };
+      put(home[0], home[1]);
+      let dragging = false, offX = 0, offY = 0;
+      p.addEventListener("pointerdown", e => {
+        if(fgLocked || p.classList.contains("placed")) return;
+        dragging = true;
+        const q = mgSvgPoint(figurasSvg, e);
+        offX = pos.x - q.x; offY = pos.y - q.y;
+        fgPieces.appendChild(p);                       // bring to front
+        try{ p.setPointerCapture(e.pointerId); }catch(err){}
+        if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+        e.preventDefault();
+      });
+      p.addEventListener("pointermove", e => {
+        if(!dragging) return;
+        const q = mgSvgPoint(figurasSvg, e);
+        put(Math.max(30, Math.min(330, q.x + offX)), Math.max(40, Math.min(570, q.y + offY)), 1.08);
+      });
+      const end = e => {
+        if(!dragging) return;
+        dragging = false;
+        try{ p.releasePointerCapture(e.pointerId); }catch(err){}
+        let near = null, best = 58;
+        holes.forEach(h => { const d = Math.hypot(h.x - pos.x, h.y - pos.y); if(d < best && !h.filled){ best = d; near = h; } });
+        if(near && near.id === sh.id){
+          near.filled = true;
+          p.classList.add("placed");
+          put(near.x, near.y, 1);
+          near.el.classList.add("done");
+          playCorrect(); burstConfetti(18);
+          speak(sh.name, "figura_" + sh.id);
+          fgLeft--;
+          if(fgLeft <= 0) fgLevelDone();
+        } else {
+          if(near){ playWrong(); p.classList.add("wrong"); setTimeout(() => p.classList.remove("wrong"), 350); }
+          const fx = pos.x, fy = pos.y;
+          fgRun.seq([[260, u => put(fx + (home[0] - fx) * mgEase(u), fy + (home[1] - fy) * mgEase(u), 1)]]);
+        }
+      };
+      p.addEventListener("pointerup", end);
+      p.addEventListener("pointercancel", end);
+      fgPieces.appendChild(p);
+    });
+  }
+  function fgLevelDone(){
+    fgLocked = true;
+    fgLevel++;
+    mgStars(document.getElementById("figurasStars"), FG_LEVELS.length, fgLevel);
+    fgRun.later(900, () => {
+      playApplause(); burstConfetti(40);
+      if(fgLevel >= FG_LEVELS.length){
+        figurasPrompt.textContent = "🌟 ¡Excelente, Emi! 🌟";
+        bigCelebration();
+        speakThen("¡Excelente! Ya conoces las figuras", "figuras_finish", 1800, fgRun.wrap(showMenu));
+      } else {
+        figurasPrompt.textContent = "🎉 ¡Muy bien, Emi! 🎉";
+        speakThen("¡Muy bien, Emi!", "numero_praise", 1200, fgRun.wrap(fgBuildLevel));
+      }
+    });
+  }
+  function startFigurasGame(){
+    fgRun.reset();
+    fgLevel = 0; fgLocked = true;
+    mgStars(document.getElementById("figurasStars"), FG_LEVELS.length, 0);
+    menuScreen.classList.add("hidden");
+    figurasScreen.classList.remove("hidden");
+    fgBuildLevel();
+    speak("Pon cada figura en su lugar", "figuras_intro");
+  }
+  document.getElementById("figurasHomeBtn").addEventListener("click", () => { fgRun.reset(); fgLocked = true; showMenu(); });
+
+  /* ================= BALLOONS MINIGAME: pop the balloons =================
+     Level 1: pop any balloon. Levels 2-5: pop only the colour asked for.
+     Voice keys: globos_intro, globos_ask_<color>, globos_finish. */
+  const globosScreen = document.getElementById("globosScreen");
+  const globosStage = document.getElementById("globosStage");
+  const globosPrompt = document.getElementById("globosPrompt");
+  const globosProgress = document.getElementById("globosProgress");
+  const glRun = mgRunner();
+  const GL_COLORS = [
+    { id:"rojo", css:"#f0393f", plural:"rojos" },     { id:"azul", css:"#2f9bff", plural:"azules" },
+    { id:"amarillo", css:"#ffd23f", plural:"amarillos" }, { id:"verde", css:"#3ecf8e", plural:"verdes" },
+    { id:"rosa", css:"#ff5d9e", plural:"rosas" },     { id:"morado", css:"#8b5cf6", plural:"morados" }
+  ];
+  const GL_LEVELS = [ { color:null, need:6 }, { color:"rojo", need:5 }, { color:"azul", need:5 }, { color:"amarillo", need:5 }, { color:"verde", need:5 } ];
+  let glLevel = 0, glCount = 0, glBalloons = [], glActive = false;
+
+  function glProgress(){ globosProgress.textContent = "🎈 " + glCount + " / " + GL_LEVELS[glLevel].need; }
+  function glAsk(){
+    const lv = GL_LEVELS[glLevel];
+    if(!lv.color){ globosPrompt.textContent = "🎈 ¡Revienta los globos!"; speak("¡Revienta los globos!", "globos_intro"); return; }
+    const c = GL_COLORS.find(k => k.id === lv.color);
+    globosPrompt.textContent = "🎈 Revienta los globos " + c.plural;
+    speak("Ahora revienta los globos " + c.plural, "globos_ask_" + c.id);
+  }
+  function glSpawn(w, h){
+    const lv = GL_LEVELS[glLevel];
+    // at least half of what floats up is the colour asked for, so there is always one to pop
+    const wanted = lv.color && (Math.random() < .5 || !glBalloons.some(b => b.color === lv.color));
+    const c = wanted ? GL_COLORS.find(k => k.id === lv.color) : GL_COLORS[Math.floor(Math.random() * GL_COLORS.length)];
+    const el = document.createElement("div");
+    el.className = "balloon"; el.dataset.color = c.id;
+    el.style.background = "radial-gradient(circle at 34% 28%, " + shadeHex(c.css, .22) + ", " + c.css + " 62%)";
+    el.innerHTML = "<i></i>";
+    const b = { el:el, color:c.id, css:c.css, x:20 + Math.random() * Math.max(10, w - 124), y:h + 20, v:(h / (5200 + Math.random() * 2600)), ph:Math.random() * 6, popped:false };
+    el.addEventListener("pointerdown", e => { e.preventDefault(); if(audioCtx && audioCtx.state === "suspended") audioCtx.resume(); glTap(b); });
+    globosStage.appendChild(el);
+    glBalloons.push(b);
+  }
+  function glTap(b){
+    if(!glActive || b.popped) return;
+    const lv = GL_LEVELS[glLevel];
+    if(lv.color && b.color !== lv.color){
+      playWrong();
+      b.el.classList.add("nope");
+      setTimeout(() => b.el.classList.remove("nope"), 300);
+      return;
+    }
+    b.popped = true;
+    b.el.classList.add("pop");
+    b.el.style.transform += " scale(1.5)";
+    setTimeout(() => b.el.remove(), 180);
+    tone(950, 0, .05, "square", .1); tone(320, .03, .09, "triangle", .14);
+    for(let i = 0; i < 7; i++){
+      const bit = document.createElement("span");
+      bit.className = "pop-bit"; bit.style.background = b.css;
+      bit.style.left = (b.x + 37) + "px"; bit.style.top = (b.y + 46) + "px";
+      globosStage.appendChild(bit);
+      const a = i / 7 * Math.PI * 2, d = 40 + Math.random() * 30;
+      const an = bit.animate ? bit.animate([{ transform:"translate(0,0)", opacity:1 }, { transform:"translate(" + Math.cos(a)*d + "px," + Math.sin(a)*d + "px)", opacity:0 }], { duration:380, easing:"ease-out" }) : null;
+      if(an) an.onfinish = () => bit.remove(); else setTimeout(() => bit.remove(), 380);
+    }
+    glCount++;
+    glProgress();
+    if(glCount >= lv.need) glLevelDone();
+  }
+  function glLevelDone(){
+    glActive = false;
+    playCorrect(); burstConfetti(40); playApplause();
+    glBalloons.forEach(b => { if(!b.popped){ b.popped = true; b.el.classList.add("pop"); setTimeout(() => b.el.remove(), 180); } });
+    glBalloons = [];
+    glLevel++;
+    if(glLevel >= GL_LEVELS.length){
+      globosPrompt.textContent = "🌟 ¡Los reventaste todos! 🌟";
+      bigCelebration();
+      speakThen("¡Reventaste todos los globos! ¡Muy bien, Emi!", "globos_finish", 1800, glRun.wrap(showMenu));
+      return;
+    }
+    globosPrompt.textContent = "🎉 ¡Muy bien, Emi! 🎉";
+    glRun.later(1300, glStartLevel);
+  }
+  function glStartLevel(){
+    glCount = 0; glActive = true;
+    glProgress(); glAsk();
+    const tok = glRun.token;
+    let last = performance.now(), nextSpawn = 0;
+    function frame(now){
+      if(!glRun.alive(tok) || !glActive) return;
+      const dt = Math.min(60, now - last); last = now;
+      const w = globosStage.clientWidth || 320, h = globosStage.clientHeight || 480;
+      if(now >= nextSpawn && glBalloons.length < 7){ glSpawn(w, h); nextSpawn = now + 650 + Math.random() * 450; }
+      glBalloons = glBalloons.filter(b => {
+        if(b.popped) return false;
+        b.y -= b.v * dt;
+        if(b.y < -150){ b.el.remove(); return false; }
+        b.el.style.transform = "translate(" + (b.x + 12 * Math.sin(now / 700 + b.ph)).toFixed(1) + "px," + b.y.toFixed(1) + "px)";
+        return true;
+      });
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  function startGlobosGame(){
+    glRun.reset();
+    glLevel = 0; glBalloons = [];
+    globosStage.innerHTML = "";
+    menuScreen.classList.add("hidden");
+    globosScreen.classList.remove("hidden");
+    glStartLevel();
+  }
+  document.getElementById("globosHomeBtn").addEventListener("click", () => { glRun.reset(); glActive = false; showMenu(); });
+
+  document.querySelectorAll(".mute-btn").forEach(b => b.addEventListener("click", () => toggleMute()));
+
   function startGame(){
     order = shuffledParts();
     currentIndex = 0;
@@ -4155,6 +5036,10 @@
     { emoji:"🧑", label:"Partes del cuerpo",       start: startGame, c:["#ffb03a", "#ff7a1a", "#c85400"] },
     { emoji:"🎠", label:"El parque", start: startParkGame, c:["#b4e04a","#6fbf2a","#4a8f14"] },
     { emoji:"🚽", label:"Al baño", start: startBanoGame, c:["#5ad7e8","#19a7c4","#0f7791"] },
+    { emoji:"🏫", label:"La escuela", start: startEscuelaGame, c:["#ffc533","#f59e0b","#b56d00"] },
+    { emoji:"🏊", label:"La alberca", start: startAlbercaGame, c:["#4db8ff","#1f7ef0","#1257b8"] },
+    { emoji:"🎈", label:"Revienta globos", start: startGlobosGame, c:["#ff7fb6","#f0438a","#b8245f"] },
+    { emoji:"🔺", label:"Figuras", start: startFigurasGame, c:["#a488ff","#7c4dff","#5227c9"] },
     { emoji:"🚗", label:"Vehículos",                start: startVehiclesGame, c:["#4db8ff", "#1f7ef0", "#1257b8"] },
     { emoji:"🔢", label:"Números",                  start: startNumbersGame, c:["#4fdc9a", "#17b877", "#0d8554"] },
     { emoji:"🔍", label:"Encuentra a tus amigos",   start: startBonusRound, c:["#ff7fb6", "#f0438a", "#b8245f"] },
@@ -4310,6 +5195,7 @@
     document.getElementById("abecedarioMuteBtn").textContent = icon;
     document.getElementById("parkMuteBtn").textContent = icon;
     document.getElementById("banoMuteBtn").textContent = icon;
+    document.querySelectorAll(".mute-btn").forEach(b => b.textContent = icon);
     if(muted){
       if(window.speechSynthesis) window.speechSynthesis.cancel();
       if(currentAudio){ currentAudio.pause(); currentAudio = null; }
